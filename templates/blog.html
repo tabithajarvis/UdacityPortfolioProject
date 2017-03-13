@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block header %}
+<!-- Header section -->
+  <header class="header">
+    <h1>
+      Front-End Blog
+    </h1>
+  </header>
+{% endblock %}
+
+{% block content %}
+  <a href="newpost">
+    <h4>
+      +Add New Blog Post
+    </h4>
+  </a>
+  {% for p in posts %}
+    {{ p.render() | safe }}
+    <br><br>
+  {% endfor %}
+
+{% endblock %}
