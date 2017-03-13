@@ -1,0 +1,141 @@
+/* Tag restyling */
+body {
+  margin: 4%;
+  font-family: "Raleway", sans-serif;
+}
+
+hr {
+  width: 100%;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+h1 {
+  color: #2d3c49;
+  font-size: 4em;
+  font-weight: 200;
+  line-height: 1.25em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+h2 {
+  color: #7d97ad;
+  font-size: 2.5em;
+  line-height: 1.25em;
+  margin: 0;
+}
+
+h3 {
+  color: #2d3c49;
+  font-size: 2.5em;
+  line-height: 1.25em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+h4 {
+  color: #2d3c49;
+  font-size: 1.5em;
+  line-height: 1.25em;
+  text-transform: uppercase;
+  margin: 10px;
+}
+
+p {
+  color: #2d3c49;
+  text-overflow: clip;
+}
+
+.header {
+  border-bottom: 3px solid #7d97ad;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+/* Header logo */
+.header-logo {
+  float: left;
+  max-width: 10%;
+}
+
+/* To hide logo on smaller viewports */
+/* @media screen and (max-width: 850px) {
+  .header-logo {
+    display: none;
+  }
+} */
+
+/* Header title and subtitle container */
+.header-title {
+  text-align: right;
+}
+
+@media screen and (max-width: 850px) {
+  .header-title {
+    text-align: center;
+  }
+}
+
+/* Large home page picture */
+.frontpage-picture {
+  max-width: 100%;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+/* To hide frontpage picture on smaller viewports */
+/* @media screen and (max-width: 850px) {
+  .frontpage-picture {
+    display: none;
+  }
+} */
+
+@media screen and (max-width: 850px) {
+  .featured-work-sect {
+    text-align: center;
+  }
+}
+
+/* Featured section container */
+.featured {
+  width: 100%;
+  display: inline-flex;
+  text-align: center;
+  flex: auto;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+
+@media screen and (max-width: 850px) {
+  .featured {
+    display: block;
+  }
+}
+
+/* Featured item */
+.featured-item {
+  text-align: center;
+  font-size: 1.5vw;
+  max-width: 30%;
+  margin-bottom: 75px;
+}
+
+@media screen and (min-width: 851px) {
+  .featured-item + .featured-item {
+    margin-left: 5%;
+  }
+}
+
+@media screen and (max-width: 850px) {
+  .featured-item {
+    font-size: 100%;
+    max-width: 100%;
+    border-bottom: 2px solid #7d97ad;
+  }
+}
+
+/* Featured items image */
+.featured-item-img {
+  max-width: 100%;
+}

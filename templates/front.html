@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block userinfo %}
+<h4>{{username}}</h4>
+{% endblock %}
+
 {% block content %}
 
   {% for p in posts %}

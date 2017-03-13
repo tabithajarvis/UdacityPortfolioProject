@@ -7,9 +7,11 @@
 </head>
 
 <body>
-  <a href="/blog" class="main-title">
-    CS 253 Blog
-  </a>
+  {% block userinfo %}
+  {% endblock %}
+  <h1 class="main-title">
+    Tabitha's Blog
+  </h1>
 
   <div id="content">
   {% block content %}
@@ -18,4 +20,3 @@
 </body>
 
 </html>
-

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <link href="https://fonts.googleapis.com/css?family=Raleway:200,200i,300,400" rel="stylesheet" />
+    <link rel="stylesheet" href="../static/style.css" />
+
+    <title>Tabitha Jarvis</title>
+  </head>
+
+
+  <body>
+    <!-- Header section with logo, title, and subtitle -->
+    <header class="header">
+      <img class="header-logo" src="/images/fixed/udacitylogo.svg" alt="Udacity logo" />
+      <div class="header-title">
+        <h1>
+          Tabitha Jarvis
+        </h1>
+        <h4>
+          Front-End Portfolio
+        </h4>
+      </div>
+    </header>
+
+    <!-- Front page banner image -->
+    <picture>
+      <source media="(max-width: 850px)" srcset="/images/frontpage-300.png 300w, /images/frontpage-800.png 800w" sizes="100vw" />
+      <source media="(min-width: 851px)" srcset="/images/frontpage-800.png 800w" sizes="100vw"/>
+      <img class="frontpage-picture" src="/images/frontpage-800.png" alt="app store" />
+    </picture>
+
+    <!-- Featured Work content -->
+    <section class="featured-work-sect">
+      <h2>
+        Featured Work
+      </h2>
+
+      <!-- Blog -->
+      <div class="featured">
+        <div class="featured-item">
+          <picture>
+            <source media="(max-width: 850px)" srcset="/images/blog-800.png 800w, /images/blog-300.png 300w" sizes="100vw" />
+            <source media="(min-width: 851px)" srcset="/images/blog-300.png 300w" sizes="30vw" />
+            <img class="featured-item-img" src="/images/blog-800.png" alt="app store" />
+          </picture>
+          <h3>
+            Blog
+          </h3>
+          <p>
+            https://github.com/udacity/Appify/
+          </p>
+        </div>
+
+        <!-- Sunflower -->
+        <div class="featured-item">
+          <picture>
+            <source media="(max-width: 850px)" srcset="/images/sunflower-800.png 800w, /images/sunflower-300.png 300w" sizes="100vw" />
+            <source media="(min-width: 851px)" srcset="/images/sunflower-300.png 300w" sizes="30vw" />
+            <img class="featured-item-img" src="/images/sunflower-800.png" alt="sunflower" />
+          </picture>
+          <h3>
+            Sunflower
+          </h3>
+          <p>
+            https://github.com/udacity/Sunflower/
+          </p>
+        </div>
+
+        <!-- Bokeh -->
+        <div class="featured-item">
+          <picture>
+            <source media="(max-width: 850px)" srcset="/images/bokeh-800.png 800w, /images/bokeh-300.png 300w" sizes="100vw" />
+            <source media="(min-width: 851px)" srcset="/images/bokeh-300.png 300w" sizes="30vw" />
+            <img class="featured-item-img" src="/images/bokeh-800.png" alt="sunny day" />
+          </picture>
+          <h3>
+            Bokeh
+          </h3>
+          <p>
+            https://github.com/udacity/Bokeh/
+          </p>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>
