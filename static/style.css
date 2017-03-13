@@ -1,7 +1,14 @@
 /* Tag restyling */
 body {
-  margin: 4%;
+  margin: 5% 10%;
   font-family: "Raleway", sans-serif;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+a:hover, a:visited, a:link, a:active
+{
+    text-decoration: none;
 }
 
 hr {
@@ -14,22 +21,19 @@ h1 {
   color: #2d3c49;
   font-size: 4em;
   font-weight: 200;
-  line-height: 1.25em;
   text-transform: uppercase;
-  margin: 0;
+  margin: .5em 0px;
 }
 
 h2 {
   color: #7d97ad;
-  font-size: 2.5em;
-  line-height: 1.25em;
-  margin: 0;
+  font-size: 3em;
+  margin: .5em 0px;
 }
 
 h3 {
   color: #2d3c49;
-  font-size: 2.5em;
-  line-height: 1.25em;
+  font-size: 2em;
   text-transform: uppercase;
   margin: 0;
 }
@@ -37,14 +41,72 @@ h3 {
 h4 {
   color: #2d3c49;
   font-size: 1.5em;
-  line-height: 1.25em;
   text-transform: uppercase;
   margin: 10px;
+}
+
+h5 {
+  color: #2d3c49;
+  font-size: 1.5em;
+  margin: 10px;
+}
+
+@media screen and (max-width: 850px) {
+  h1 {
+    font-size: 3em;
+  }
+
+  h2 {
+    font-size: 2em;
+  }
+
+  h3 {
+    font-size: 1.5em;
+  }
+
+  h4 {
+    font-size: 1em;
+  }
+
+  h5 {
+    font-size: 1em;
+  }
+
 }
 
 p {
   color: #2d3c49;
   text-overflow: clip;
+}
+
+input[type=text] {
+  width: 100%;
+  padding: 12px 10px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border: 2px solid #7d97ad;
+  font-size: 1.25em;
+}
+
+input[type=submit] {
+  padding: .5em .5em;
+  margin: 8px 0;
+  font-size: 2em;
+}
+
+textarea {
+  width: 80vw;
+  height: 40vw;
+  padding: 12px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border: 2px solid #7d97ad;
+}
+
+@media screen and (max-width: 850px) {
+  textarea {
+
+  }
 }
 
 .header {
@@ -138,4 +200,27 @@ p {
 /* Featured items image */
 .featured-item-img {
   max-width: 100%;
+}
+
+.action-link {
+  background-color: #7d97ad;
+  float: right;
+}
+
+.blog-title {
+  background-color: #ddd;
+  display: block;
+  padding: 1em 0;
+}
+
+.blog-date {
+
+}
+
+.recent-posts {
+  padding: 50px 0;
+}
+
+.blog-post {
+
 }

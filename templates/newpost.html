@@ -1,26 +1,23 @@
-{% extends "base.html" %}
-
-{% block header %}
-<!-- Header section -->
-  <header class="header">
-    <h1>
-      Front-End Blog
-    </h1>
-  </header>
-  <h2>Add New Blog Post</h2>
-
-{% endblock %}
+{% extends "blog.html" %}
 
 {% block content %}
+  <h2>New Blog Post</h2>
+
     <form method="post">
       <label>
-        <div>subject</div>
-        <input type="text" name="subject" value="{{subject}}">
+        <h3>
+          Title
+        </h3>
+        <input type="text" name="title" value="{{title}}">
       </label>
 
       <label>
-        <div>blog</div>
-        <textarea name="content">{{content}}</textarea>
+        <h3>
+          Blog Post
+        </h3>
+        <textarea name="blogpost">
+            {{blogpost}}
+        </textarea>
       </label>
 
       <div class="error">{{error}}</div>

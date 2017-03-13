@@ -1,15 +1,20 @@
-<div class="post">
-  <div class="post-heading">
-    <div class="post-title">
-      {{p.subject}}
-    </div>
+<div class="blog-post">
+  <div>
 
-    <div class="post-date">
-      {{p.created.strftime("%b %d, %Y")}}
-    </div>
+    <a href='/blog/{{id}}'>
+      <div class="blog-title">
+        <h4>
+          {{p.title}}
+        </h4>
+      </div>
+      <h5 class="blog-date">
+        {{p.created.strftime("%b %d, %Y")}}
+      </h5>
+    </a>
+
   </div>
 
-  <div class="post-content">
-    {{p._render_text | safe}}
-  </div>
+  <p>
+    {{p.blogpost}}
+  </p>
 </div>
