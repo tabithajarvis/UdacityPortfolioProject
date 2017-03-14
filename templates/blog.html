@@ -13,7 +13,9 @@
 
 {% block content %}
 <h5>
-  Welcome, {{username}}!
+  {% if username %}
+    Welcome, {{username}}!
+  {% endif %}
 </h5>
 
   <a href="/blog/newpost">

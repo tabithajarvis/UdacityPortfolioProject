@@ -70,6 +70,7 @@ def find_by_name(username):
     return user.get()
 
 
+# Base handler
 class Handler(webapp2.RequestHandler):
     """The generic handler for all web pages.
 
@@ -119,14 +120,13 @@ class Blog(Handler):
         self.render('blog.html', posts=p)
 
     def render(self, template, **kw):
-        """Render blog pages if the username cookie is set."""
+        """Render blog pages."""
         username = self.request.cookies.get('username')
 
-        if(template == "signup-form" or username):
+        if(username):
             kw["username"] = username
-            super(Blog, self).render(template, **kw)
-        else:
-            self.redirect('/blog/signup')
+
+        super(Blog, self).render(template, **kw)
 
 
 class NewPost(Handler):
@@ -134,7 +134,13 @@ class NewPost(Handler):
 
     def get(self):
         """Get the new post page."""
-        self.render('newpost.html')
+        username = self.request.cookies.get('username')
+
+        if not username == "":
+            self.render('newpost.html')
+        else:
+            error = "You must be signed in to create posts."
+            return self.redirect_to('SignIn', error=error)
 
     def post(self):
         """Save post in the database if valid, or prompt for valid entry."""
@@ -144,7 +150,7 @@ class NewPost(Handler):
         if title and blogpost:
             p = Post(parent=blog_key(), title=title, blogpost=blogpost)
             p.put()
-            self.redirect('/blog/%s' % str(p.key().id()))
+            return self.redirect('/blog/%s' % str(p.key().id()))
         else:
             error = "Please enter a title and post content."
             self.render(
@@ -216,7 +222,7 @@ class SignUp(Handler):
                 )
             user.put()
             self.set_cookie("username", username)
-            self.redirect('/blog', username)
+            return self.redirect_to('Blog')
 
 
 class SignIn(Handler):
@@ -224,29 +230,43 @@ class SignIn(Handler):
 
     def get(self):
         """Get the sign in form document."""
-        self.render("signin-form.html")
+        self.render(
+            "signin-form.html",
+            error_action=self.request.get('error'),
+            logged_out=self.request.get('logged_out')
+            )
 
-    def post(self):
+    def post(self, **kw):
         """Store username cookie if userame and password are correct."""
         username = self.request.get('username')
         password = self.request.get('password')
         error_flag = False
 
-        kw = dict(username=username)
+        params = {"username": username}
+
         user = find_by_name(username)
 
         if not user:
-            kw['error_username'] = "Username does not exist."
+            params['error_username'] = "Username does not exist."
             error_flag = True
         elif not user.password == password:
-            kw['error_password'] = "Incorrect password."
+            params['error_password'] = "Incorrect password."
             error_flag = True
 
         if error_flag:
-            self.render('signin-form.html', **kw)
+            self.render('signin-form.html', **params)
         else:
             self.set_cookie("username", username)
-            self.redirect('/blog', username)
+            return self.redirect_to('Blog')
+
+
+class LogOut(Handler):
+    """Handler for logging out."""
+
+    def get(self):
+        """Clear cookies and redirect to sign in."""
+        self.set_cookie("username", "")
+        return self.redirect_to('SignIn', error="Successfully logged out.")
 
 
 class Post(db.Model):
@@ -272,10 +292,11 @@ class User(db.Model):
 
 
 app = webapp2.WSGIApplication([
-    ('/', MainPage),
-    ('/blog', Blog),
-    ('/blog/newpost', NewPost),
-    ('/blog/([0-9]+)', PostPage),
-    ('/blog/signup', SignUp),
-    ('/blog/signin', SignIn),
+    webapp2.Route('/', MainPage, 'MainPage'),
+    webapp2.Route('/blog', Blog, 'Blog'),
+    webapp2.Route('/blog/newpost', NewPost, 'NewPost'),
+    webapp2.Route('/blog/([0-9]+)', PostPage, 'PostPage'),
+    webapp2.Route('/blog/signup', SignUp, 'SignUp'),
+    webapp2.Route('/blog/signin', SignIn, 'SignIn'),
+    webapp2.Route('/blog/logout', LogOut, 'LogOut'),
     ], debug=True)
