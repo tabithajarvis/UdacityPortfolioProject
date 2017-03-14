@@ -31,6 +31,7 @@ def render_post(response, post):
 
 class MainPage(BlogHandler):
     def get(self):
+        self.response.headers['Content-Type'] = 'text/plain'
         posts = db.GqlQuery("select * from Post order by created desc limit 10")
         self.render('front.html', posts = posts, user=user)
 
