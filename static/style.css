@@ -88,6 +88,15 @@ input[type=text] {
   font-size: 1.25em;
 }
 
+input[type=password] {
+  width: 100%;
+  padding: 12px 10px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border: 2px solid #7d97ad;
+  font-size: 1.25em;
+}
+
 input[type=submit] {
   padding: .5em .5em;
   margin: 8px 0;
@@ -223,4 +232,8 @@ textarea {
 
 .blog-post {
 
+}
+
+.error {
+  color: red;
 }

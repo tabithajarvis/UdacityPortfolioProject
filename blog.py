@@ -46,6 +46,30 @@ def blog_key(name='default'):
     return db.Key.from_path('blogs', name)
 
 
+def valid_username(username):
+    """Check if a username is valid."""
+    return username and USER_RE.match(username)
+
+
+def valid_password(password):
+    """Check if a password is valid."""
+    return password and PASS_RE.match(password)
+
+
+def valid_email(email):
+    """Check if an email address is valid."""
+    return not email or EMAIL_RE.match(email)
+
+
+def find_by_name(username):
+    """Find a user by username."""
+    user = db.GqlQuery(
+        "select * from User where username = :username",
+        username=username
+        )
+    return user.get()
+
+
 class Handler(webapp2.RequestHandler):
     """The generic handler for all web pages.
 
@@ -99,6 +123,7 @@ class Blog(Handler):
         username = self.request.cookies.get('username')
 
         if(template == "signup-form" or username):
+            kw["username"] = username
             super(Blog, self).render(template, **kw)
         else:
             self.redirect('/blog/signup')
@@ -145,7 +170,7 @@ class PostPage(Handler):
         self.render("permalink.html", post=post, id=str(post.key().id()))
 
 
-class SignupPage(Handler):
+class SignUp(Handler):
     """Handle the sign up page."""
 
     def get(self):
@@ -160,36 +185,66 @@ class SignupPage(Handler):
         email = self.request.get('email')
         error_flag = False
 
-        params = dict(username=username, email=email)
-        user = User(
-            parent=blog_key(),
-            username=username,
-            password=password,
-            email=email
-            )
+        params = {"username": username, "email": email}
 
-        if not user.valid_username(username):
+        if not valid_username(username):
             params['error_username'] = "Please enter a valid username."
             error_flag = True
-        elif user.username_taken(username):
+        elif find_by_name(username):
             params['error_username'] = "This username is not available."
             error_flag = True
 
-        if not user.valid_password(password):
+        if not valid_password(password):
             params['error_password'] = "Please enter a valid password."
             error_flag = True
         elif password != verify:
             params['error_verify'] = "Your passwords did not match."
             error_flag = True
 
-        if not user.valid_email(email):
+        if not valid_email(email):
             params['error_email'] = "Please enter a valid email address."
             error_flag = True
 
         if error_flag:
             self.render('signup-form.html', **params)
         else:
+            user = User(
+                parent=blog_key(),
+                username=username,
+                password=password,
+                email=email
+                )
             user.put()
+            self.set_cookie("username", username)
+            self.redirect('/blog', username)
+
+
+class SignIn(Handler):
+    """Handle the sign in page."""
+
+    def get(self):
+        """Get the sign in form document."""
+        self.render("signin-form.html")
+
+    def post(self):
+        """Store username cookie if userame and password are correct."""
+        username = self.request.get('username')
+        password = self.request.get('password')
+        error_flag = False
+
+        kw = dict(username=username)
+        user = find_by_name(username)
+
+        if not user:
+            kw['error_username'] = "Username does not exist."
+            error_flag = True
+        elif not user.password == password:
+            kw['error_password'] = "Incorrect password."
+            error_flag = True
+
+        if error_flag:
+            self.render('signin-form.html', **kw)
+        else:
             self.set_cookie("username", username)
             self.redirect('/blog', username)
 
@@ -215,31 +270,12 @@ class User(db.Model):
     password = db.StringProperty(required=True)
     email = db.StringProperty(required=True)
 
-    def username_taken(self, username):
-        """Check if a username has already been taken."""
-        user = db.GqlQuery(
-            "select * from User where username = :username",
-            username=username
-            )
-        return user.get()
-
-    def valid_username(self, username):
-        """Check if a username is valid."""
-        return username and USER_RE.match(username)
-
-    def valid_password(self, password):
-        """Check if a password is valid."""
-        return password and PASS_RE.match(password)
-
-    def valid_email(self, email):
-        """Check if an email address is valid."""
-        return not email or EMAIL_RE.match(email)
-
 
 app = webapp2.WSGIApplication([
     ('/', MainPage),
     ('/blog', Blog),
     ('/blog/newpost', NewPost),
     ('/blog/([0-9]+)', PostPage),
-    ('/blog/signup', SignupPage)
+    ('/blog/signup', SignUp),
+    ('/blog/signin', SignIn),
     ], debug=True)
