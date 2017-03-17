@@ -1,21 +1,24 @@
 {% extends "base.html" %}
 
 {% block header %}
-  <!-- Header section with logo, title, and subtitle -->
-  <header class="header">
-    <img class="header-logo" src="/images/fixed/udacitylogo.svg" alt="Udacity logo" />
-    <div class="header-title">
-      <h1>
-        Tabitha Jarvis
-      </h1>
-      <h4>
-        Front-End Portfolio
-      </h4>
-    </div>
-  </header>
+  <div class="container-fluid">
+    <!-- Header section with logo, title, and subtitle -->
+    <header class="row header" >
+      <img class="col-md-2 header-logo" src="/images/fixed/udacitylogo.svg" alt="Udacity logo" />
+      <div class="col-md-10 header-title">
+        <h1>
+          Tabitha Jarvis
+        </h1>
+        <h4>
+          Front-End Portfolio
+        </h4>
+      </div>
+    </header>
+  </div>
 {% endblock %}
 
 {% block content %}
+<div class="container-fluid">
     <!-- Front page banner image -->
     <picture>
       <source media="(max-width: 850px)" srcset="/images/frontpage-300.png 300w, /images/frontpage-800.png 800w" sizes="100vw" />
@@ -78,4 +81,6 @@
         </div>
       </div>
     </section>
+
+</div>
 {% endblock %}

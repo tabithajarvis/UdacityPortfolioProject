@@ -10,19 +10,30 @@ Example:
 
     $ dev_appserver.py app.yaml
 
-  Or go to the deployed app at::
+  Or go to the deployed app at:
 
     https://blog-161405.appspot.compile
 
+TODO:
+    - Add User to Post entity for ownership
+    - Make password cookie
+    - Hash that password
+    - Consider adding * by required items in signup page
+    - Change titles of pages
 """
 
 import os
 import re
+import hmac
+import logging
 
 import webapp2
 import jinja2
 
 from google.appengine.ext import db
+
+secret = 'l0ng_&secure.$A1t-4_#ing'
+
 
 # Set up Jinja2 enviroment
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
@@ -41,9 +52,14 @@ def render_str(template, **kwargs):
     return t.render(kwargs)
 
 
-def blog_key(name='default'):
+def post_key(name='default'):
     """Retrieve the blog key."""
-    return db.Key.from_path('blogs', name)
+    return db.Key.from_path('Post', name)
+
+
+def user_key(name='default'):
+    """Retrieve the user key."""
+    return db.Key.from_path('User', name)
 
 
 def valid_username(username):
@@ -70,6 +86,18 @@ def find_by_name(username):
     return user.get()
 
 
+def make_secure_val(val):
+    """Create a salted hash password for cookie storage."""
+    return '%s|%s' % (val, hmac.new(secret, val).hexdigest())
+
+
+def check_secure_val(secure_val):
+    """Check that the salt is correct."""
+    val = secure_val.split('|')[0]
+    if secure_val == make_secure_val(val):
+        return val
+
+
 # Base handler
 class Handler(webapp2.RequestHandler):
     """The generic handler for all web pages.
@@ -84,9 +112,9 @@ class Handler(webapp2.RequestHandler):
         """Write the HTML."""
         self.response.out.write(*a, **kw)
 
-    def render_str(self, template, **params):
+    def render_str(self, template, **kw):
         """Call the global render string function for rendering templates."""
-        return render_str(template, **params)
+        return render_str(template, **kw)
 
     def render(self, template, **kw):
         """Render the template given."""
@@ -94,8 +122,15 @@ class Handler(webapp2.RequestHandler):
 
     def set_cookie(self, name, value):
         """Set a cookie."""
+        secure_val = make_secure_val(value)
         self.response.headers['Set-Cookie'] = \
-            str("%s=%s; Path=/;" % (name, value))
+            str("%s=%s; Path=/;" % (name, secure_val))
+
+    def get_cookie(self, name):
+        """Get a cookie."""
+        value = self.request.cookies.get(name)
+        if value:
+            return check_secure_val(value)
 
 
 # Page Handlers
@@ -110,23 +145,20 @@ class MainPage(Handler):
 class Blog(Handler):
     """The handler for the blog project of the porfolio.
 
-    This is the home page of the blog project, and it requires a user to be
-    logged in to access any of the pages.
+    This is the home page of the blog project.
     """
 
     def get(self):
         """Get the front page with the 10 newest blog posts."""
-        p = db.GqlQuery("select * from Post order by created desc limit 10")
-        self.render('blog.html', posts=p)
+        posts = db.GqlQuery(
+            "select * from Post order by created desc limit 10"
+            )
+        username = self.get_cookie('username')
+        for p in posts:
+            logging.debug("\nPost ID is: %s\n" % str(p.key().id()))
+            logging.debug("URL is: %s" % self.request.url)
 
-    def render(self, template, **kw):
-        """Render blog pages."""
-        username = self.request.cookies.get('username')
-
-        if(username):
-            kw["username"] = username
-
-        super(Blog, self).render(template, **kw)
+        self.render('blog.html', posts=posts, username=username)
 
 
 class NewPost(Handler):
@@ -134,9 +166,9 @@ class NewPost(Handler):
 
     def get(self):
         """Get the new post page."""
-        username = self.request.cookies.get('username')
+        self.username = self.get_cookie('username')
 
-        if not username == "":
+        if self.username:
             self.render('newpost.html')
         else:
             error = "You must be signed in to create posts."
@@ -146,9 +178,15 @@ class NewPost(Handler):
         """Save post in the database if valid, or prompt for valid entry."""
         title = self.request.get('title')
         blogpost = self.request.get('blogpost')
+        author = find_by_name(self.get_cookie('username'))
 
         if title and blogpost:
-            p = Post(parent=blog_key(), title=title, blogpost=blogpost)
+            p = Post(
+                parent=post_key(),
+                author=author,
+                title=title,
+                blogpost=blogpost
+                )
             p.put()
             return self.redirect('/blog/%s' % str(p.key().id()))
         else:
@@ -164,16 +202,16 @@ class NewPost(Handler):
 class PostPage(Handler):
     """Handle the individual blog entry pages."""
 
-    def get(self, post_id):
+    def get(self, url):
         """Get the post entry page from the post id."""
-        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+
+        key = db.Key.from_path('Post', int(url), parent=post_key())
         post = db.get(key)
 
         if not post:
-            self.error(404)
-            return
+            logging.debug("\n404 Page Not Found\n")
 
-        self.render("permalink.html", post=post, id=str(post.key().id()))
+        self.render("permalink.html", post=post)
 
 
 class SignUp(Handler):
@@ -215,7 +253,7 @@ class SignUp(Handler):
             self.render('signup-form.html', **params)
         else:
             user = User(
-                parent=blog_key(),
+                parent=user_key(),
                 username=username,
                 password=password,
                 email=email
@@ -269,20 +307,6 @@ class LogOut(Handler):
         return self.redirect_to('SignIn', error="Successfully logged out.")
 
 
-class Post(db.Model):
-    """Handler for Post entities and blog post rendering."""
-
-    title = db.StringProperty(required=True)
-    blogpost = db.TextProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
-    last_modified = db.DateTimeProperty(auto_now=True)
-
-    def render(self):
-        """Render template replacing user-input new lines with line breaks."""
-        self.blogpost = self.blogpost.replace('\n', '<br>')
-        return render_str("post.html", p=self, id=str(self.key().id()))
-
-
 class User(db.Model):
     """Handler for User entities."""
 
@@ -291,11 +315,34 @@ class User(db.Model):
     email = db.StringProperty(required=True)
 
 
+class Post(db.Model):
+    """Handler for Post entities and blog post rendering."""
+
+    author = db.ReferenceProperty(
+        User,
+        collection_name="posts",
+        required=True
+        )
+
+    title = db.StringProperty(required=True)
+    blogpost = db.TextProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
+    last_modified = db.DateTimeProperty(auto_now=True)
+
+    def render(self, **kwargs):
+        """Render template replacing user-input new lines with line breaks."""
+        self.blogpost = self.blogpost.replace('\n', '<br>')
+        return render_str(
+            "post.html",
+            post=self
+            )
+
+
 app = webapp2.WSGIApplication([
     webapp2.Route('/', MainPage, 'MainPage'),
     webapp2.Route('/blog', Blog, 'Blog'),
     webapp2.Route('/blog/newpost', NewPost, 'NewPost'),
-    webapp2.Route('/blog/([0-9]+)', PostPage, 'PostPage'),
+    webapp2.Route('/blog/<:([0-9]+)>', PostPage, 'PostPage'),
     webapp2.Route('/blog/signup', SignUp, 'SignUp'),
     webapp2.Route('/blog/signin', SignIn, 'SignIn'),
     webapp2.Route('/blog/logout', LogOut, 'LogOut'),

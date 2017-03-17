@@ -22,13 +22,13 @@ h1 {
   font-size: 4em;
   font-weight: 200;
   text-transform: uppercase;
-  margin: .5em 0px;
+  margin: .5em 0;
 }
 
 h2 {
   color: #7d97ad;
   font-size: 3em;
-  margin: .5em 0px;
+  margin: .5em 0;
 }
 
 h3 {
@@ -81,18 +81,14 @@ p {
 
 input[type=text] {
   width: 100%;
-  padding: 12px 10px;
   margin: 8px 0;
-  box-sizing: border-box;
   border: 2px solid #7d97ad;
   font-size: 1.25em;
 }
 
 input[type=password] {
   width: 100%;
-  padding: 12px 10px;
   margin: 8px 0;
-  box-sizing: border-box;
   border: 2px solid #7d97ad;
   font-size: 1.25em;
 }
@@ -100,25 +96,17 @@ input[type=password] {
 input[type=submit] {
   padding: .5em .5em;
   margin: 8px 0;
-  font-size: 2em;
 }
 
 textarea {
   width: 80vw;
   height: 40vw;
-  padding: 12px 20px;
   margin: 8px 0;
-  box-sizing: border-box;
   border: 2px solid #7d97ad;
 }
 
-@media screen and (max-width: 850px) {
-  textarea {
-
-  }
-}
-
 .header {
+  display: block;
   border-bottom: 3px solid #7d97ad;
   padding-bottom: 20px;
   margin-bottom: 20px;
@@ -126,8 +114,8 @@ textarea {
 
 /* Header logo */
 .header-logo {
-  float: left;
-  max-width: 10%;
+  width: 100%;
+  max-width: 10vw;
 }
 
 /* To hide logo on smaller viewports */
@@ -149,7 +137,7 @@ textarea {
 }
 
 /* Large home page picture */
-.frontpage-picture {
+.frontpage-picture{
   max-width: 100%;
   margin-top: 20px;
   margin-bottom: 20px;
@@ -222,16 +210,12 @@ textarea {
   padding: 1em 0;
 }
 
-.blog-date {
-
-}
-
 .recent-posts {
   padding: 50px 0;
 }
 
-.blog-post {
-
+.label {
+  color: #2d3c49;
 }
 
 .error {

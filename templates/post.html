@@ -1,20 +1,23 @@
 <div class="blog-post">
   <div>
 
-    <a href='/blog/{{id}}'>
+    <a href='/blog/{{post.key().id()}}'>
       <div class="blog-title">
         <h4>
-          {{p.title}}
+          {{post.title}}
+          <span class="author">
+            {{post.author.username}}
+          </span>
         </h4>
       </div>
       <h5 class="blog-date">
-        {{p.created.strftime("%b %d, %Y")}}
+        {{post.created.strftime("%b %d, %Y")}}
       </h5>
     </a>
 
   </div>
 
   <p>
-    {{p.blogpost | safe}}
+    {{post.blogpost | safe}}
   </p>
 </div>
