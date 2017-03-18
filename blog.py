@@ -15,11 +15,13 @@ Example:
     https://blog-161405.appspot.compile
 
 TODO:
-    - Add User to Post entity for ownership
-    - Make password cookie
-    - Hash that password
-    - Consider adding * by required items in signup page
-    - Change titles of pages
+  - Edit own posts
+  - Delete own posts
+  - Like/Unlike posts except own
+    - Error trying to like own post
+  - Comment on posts
+    - Edit own comments
+    - Delete own comments
 """
 
 import os
@@ -33,7 +35,6 @@ import jinja2
 from google.appengine.ext import db
 
 secret = 'l0ng_&secure.$A1t-4_#ing'
-
 
 # Set up Jinja2 enviroment
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
@@ -154,11 +155,22 @@ class Blog(Handler):
             "select * from Post order by created desc limit 10"
             )
         username = self.get_cookie('username')
-        for p in posts:
-            logging.debug("\nPost ID is: %s\n" % str(p.key().id()))
-            logging.debug("URL is: %s" % self.request.url)
-
         self.render('blog.html', posts=posts, username=username)
+
+
+class PostPage(Handler):
+    """Handle the individual blog entry pages."""
+
+    def get(self, **kw):
+        """Get the post entry page from the url."""
+        key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
+        post = db.get(key)
+
+        if not post:
+            logging.debug("\n404 Page Not Found\n")
+            self.error(404)
+
+        self.render("permalink.html", post=post)
 
 
 class NewPost(Handler):
@@ -199,19 +211,55 @@ class NewPost(Handler):
                 )
 
 
-class PostPage(Handler):
-    """Handle the individual blog entry pages."""
+class EditPost(Handler):
+    """Handle the edit blog pages."""
 
-    def get(self, url):
-        """Get the post entry page from the post id."""
+    def get(self, **kw):
+        """Get the blog edit page from the url."""
+        key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
+        post = db.get(key)
+        username = self.get_cookie('username')
+        if username == post.author.username:
+            self.render(
+                'editpost.html',
+                title=post.title,
+                blogpost=post.blogpost,
+                post_id=kw['post_id']
+                )
+        #else:
+            #TODO make error modal popup
 
-        key = db.Key.from_path('Post', int(url), parent=post_key())
+    def post(self, **kw):
+        """Update the blog post."""
+        username = self.get_cookie('username')
+        title = self.request.get('title')
+        blogpost = self.request.get('blogpost')
+
+        key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
         post = db.get(key)
 
-        if not post:
-            logging.debug("\n404 Page Not Found\n")
+        if post and username:
+            if username == post.author.username:
+                if title and blogpost:
+                    post.title = title
+                    post.blogpost = blogpost
+                    post.last_modified = db.DateTimeProperty(auto_now=True)
+                    post.put()
+                    return self.redirect('/blog/%s' % kw['post_id'])
+                else:
+                    error = "Please enter a title and post content."
+            else:
+                error = "You are not authorized to edit this post."
+        else:
+            error = "Cannot access post."
 
-        self.render("permalink.html", post=post)
+        self.render(
+            'editpost.html',
+            title=title,
+            blogpost=blogpost,
+            post_id=kw['post_id'],
+            error=error
+            )
 
 
 class SignUp(Handler):
@@ -342,7 +390,8 @@ app = webapp2.WSGIApplication([
     webapp2.Route('/', MainPage, 'MainPage'),
     webapp2.Route('/blog', Blog, 'Blog'),
     webapp2.Route('/blog/newpost', NewPost, 'NewPost'),
-    webapp2.Route('/blog/<:([0-9]+)>', PostPage, 'PostPage'),
+    webapp2.Route('/blog/<post_id:([0-9]+)>/edit', EditPost, 'EditPost'),
+    webapp2.Route('/blog/<post_id:([0-9]+)>', PostPage, 'PostPage'),
     webapp2.Route('/blog/signup', SignUp, 'SignUp'),
     webapp2.Route('/blog/signin', SignIn, 'SignIn'),
     webapp2.Route('/blog/logout', LogOut, 'LogOut'),

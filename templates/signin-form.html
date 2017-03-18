@@ -1,11 +1,13 @@
 {% extends "blog.html" %}
 
-{% block content %}
-    <h2>Sign In</h2>
+{% block title %}
+  <h2>Sign In</h2>
+{% endblock %}
 
-      <p class="error">
-        {{error_action}}
-      </p>
+{% block content %}
+    <p class="error">
+      {{error_action}}
+    </p>
 
     <form method="post">
       <table>
@@ -35,12 +37,12 @@
       </table>
 
       <input type="submit">
-
-      <p>
-        Don't have an account?
-        <a href="/blog/signup">
-          Register.
-        </a>
-      </p>
     </form>
+
+    <p>
+      Don't have an account?
+      <a href="/blog/signup">
+        Register.
+      </a>
+    </p>
 {% endblock %}

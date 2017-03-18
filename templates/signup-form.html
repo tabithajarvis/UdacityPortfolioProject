@@ -1,7 +1,10 @@
 {% extends "blog.html" %}
 
+{% block title %}
+  <h2>Register</h2>
+{% endblock %}
+
 {% block content %}
-    <h2>Register</h2>
     <form method="post">
       <table>
         <tr>
@@ -54,12 +57,12 @@
       </table>
 
       <input type="submit">
-
-      <p>
-        Already registered?
-        <a href="/blog/signin">
-          Sign In.
-        </a>
-      </p>
     </form>
+
+    <p>
+      Already registered?
+      <a href="/blog/signin">
+        Sign In.
+      </a>
+    </p>
 {% endblock %}
