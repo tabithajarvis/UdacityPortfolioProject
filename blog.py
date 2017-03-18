@@ -15,7 +15,6 @@ Example:
     https://blog-161405.appspot.compile
 
 TODO:
-  - Edit own posts
   - Delete own posts
   - Like/Unlike posts except own
     - Error trying to like own post
@@ -154,8 +153,11 @@ class Blog(Handler):
         posts = db.GqlQuery(
             "select * from Post order by created desc limit 10"
             )
-        username = self.get_cookie('username')
-        self.render('blog.html', posts=posts, username=username)
+        self.render(
+            'blog.html',
+            posts=posts,
+            username=self.get_cookie("username")
+            )
 
 
 class PostPage(Handler):
@@ -170,7 +172,7 @@ class PostPage(Handler):
             logging.debug("\n404 Page Not Found\n")
             self.error(404)
 
-        self.render("permalink.html", post=post)
+        self.render("permalink.html", post=post, username=self.get_cookie("username"))
 
 
 class NewPost(Handler):
@@ -226,8 +228,9 @@ class EditPost(Handler):
                 blogpost=post.blogpost,
                 post_id=kw['post_id']
                 )
-        #else:
-            #TODO make error modal popup
+        else:
+            return self.redirect('/blog/%s' % kw['post_id'])
+
 
     def post(self, **kw):
         """Update the blog post."""
@@ -380,9 +383,10 @@ class Post(db.Model):
     def render(self, **kwargs):
         """Render template replacing user-input new lines with line breaks."""
         self.blogpost = self.blogpost.replace('\n', '<br>')
+        kwargs["post"] = self
         return render_str(
             "post.html",
-            post=self
+            **kwargs
             )
 
 

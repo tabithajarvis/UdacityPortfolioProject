@@ -1,5 +1,5 @@
 {% extends "blog.html" %}
 
 {% block content %}
-  {{post.render() | safe}}
+  {{post.render(username=username) | safe}}
 {% endblock %}

@@ -10,21 +10,24 @@
           </span>
         </h4>
       </div>
-      <h5>
-        {{post.created.strftime("%b %d, %Y")}}
-      </h5>
-      {% if post.created != post.last_modified %}
-      <p>
-        Edited on: {{post.last_modified.strftime("%b %d, %Y")}}
-      </p>
-      {% endif %}
     </a>
 
+    <h5>
+      {{post.created.strftime("%b %d, %Y")}}
+    </h5>
+    {% if post.created != post.last_modified %}
+    <p>
+      Edited on: {{post.last_modified.strftime("%b %d, %Y")}}
+    </p>
+    {% endif %}
+
+    {% if username == post.author.username %}
     <a href="/blog/{{post.key().id()}}/edit">
       <h5>
         Edit
       </h5>
     </a>
+    {% endif %}
 
   </div>
 

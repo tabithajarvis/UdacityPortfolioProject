@@ -53,7 +53,7 @@
 
   <div>
     {% for p in posts %}
-      {{ p.render() | safe }}
+      {{ p.render(username=username) | safe }}
       <br />
       <hr />
       <br />
