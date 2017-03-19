@@ -3,6 +3,7 @@
 
     <a href='/blog/{{post.key().id()}}'>
       <div class="blog-title">
+        <h5>{{post.score}}</h5>
         <h4>
           {{post.title}}
           <span class="author">
@@ -28,6 +29,13 @@
       </h5>
     </a>
     {% endif %}
+
+
+    <form method="post">
+      <input type="hidden" name="post_id" value={{post.key().id()}} />
+      <input type="submit" name="vote" value="Upvote" />
+      <input type="submit" name="vote" value="Downvote" />
+    </form>
 
   </div>
 

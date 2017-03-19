@@ -153,11 +153,38 @@ class Blog(Handler):
         posts = db.GqlQuery(
             "select * from Post order by created desc limit 10"
             )
+        cached_key = self.get_cookie("cached_key")
+        cached_score = self.get_cookie("cached_score")
+        if cached_score and cached_key:
+            posts[int(cached_key)].score = int(cached_score)
+            self.set_cookie("cached_key", "")
+            self.set_cookie("cached_score", "")
+
         self.render(
             'blog.html',
             posts=posts,
             username=self.get_cookie("username")
             )
+
+    def post(self):
+        """Handle the POST action."""
+        key = db.Key.from_path(
+            'Post',
+            int(self.request.get("post_id")),
+            parent=post_key()
+            )
+        post = db.get(key)
+        vote = self.request.get("vote")
+        username = self.get_cookie("username")
+
+        if vote == "Upvote":
+            post.upvote(username)
+        elif vote == "Downvote":
+            post.downvote(username)
+        post.put()
+        self.set_cookie("cached_key", str(post.key().id()))
+        self.set_cookie("cached_score", str(post.score))
+        self.redirect_to('Blog')
 
 
 class PostPage(Handler):
@@ -172,7 +199,11 @@ class PostPage(Handler):
             logging.debug("\n404 Page Not Found\n")
             self.error(404)
 
-        self.render("permalink.html", post=post, username=self.get_cookie("username"))
+        self.render(
+            "permalink.html",
+            post=post,
+            username=self.get_cookie("username")
+            )
 
 
 class NewPost(Handler):
@@ -230,7 +261,6 @@ class EditPost(Handler):
                 )
         else:
             return self.redirect('/blog/%s' % kw['post_id'])
-
 
     def post(self, **kw):
         """Update the blog post."""
@@ -379,6 +409,9 @@ class Post(db.Model):
     blogpost = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
     last_modified = db.DateTimeProperty(auto_now=True)
+    score = db.IntegerProperty(default=0)
+    upvotes = db.ListProperty(db.Key)
+    downvotes = db.ListProperty(db.Key)
 
     def render(self, **kwargs):
         """Render template replacing user-input new lines with line breaks."""
@@ -388,6 +421,30 @@ class Post(db.Model):
             "post.html",
             **kwargs
             )
+
+    def upvote(self, username):
+        """Handle this post's downvote action."""
+        key = user_key(username)
+
+        if key not in self.upvotes and username != self.author.username:
+            if key in self.downvotes:
+                self.downvotes.remove(key)
+            else:
+                self.upvotes.append(key)
+            self.score = len(self.upvotes) - len(self.downvotes)
+            self.put()
+
+    def downvote(self, username):
+        """Handle this post's downvote action."""
+        key = user_key(username)
+
+        if key not in self.downvotes and username != self.author.username:
+            if key in self.upvotes:
+                self.upvotes.remove(key)
+            else:
+                self.downvotes.append(key)
+            self.score = len(self.upvotes) - len(self.downvotes)
+            self.put()
 
 
 app = webapp2.WSGIApplication([
