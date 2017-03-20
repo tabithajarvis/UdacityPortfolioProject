@@ -221,3 +221,18 @@ textarea {
 .error {
   color: red;
 }
+
+.comment-post {
+  width: 80vw;
+  background-color: #ddd;
+}
+
+.comment-header {
+  border: 1px solid #2d3c49;
+}
+
+.comment-input {
+  width: 50vw;
+  height: 10vw;
+
+}

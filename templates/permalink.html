@@ -1,5 +1,28 @@
 {% extends "blog.html" %}
 
 {% block content %}
-  {{post.render(username=username) | safe}}
+{{post.render() | safe}}
+
+<hr />
+
+<form method=post>
+  <label>
+    <h3>
+      Add Comment
+    </h3>
+    <textarea class="comment-input" name="comment"></textarea>
+  </label>
+  <div>
+    <input type=submit>
+  </div>
+</form>
+
+<div>
+  {% for c in post.comments %}
+    {{ c.render(username=username) | safe }}
+    <br />
+    <hr />
+    <br />
+  {% endfor %}
+</div>
 {% endblock %}

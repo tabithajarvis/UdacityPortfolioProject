@@ -1,0 +1,44 @@
+<div class="comment-post">
+  <div>
+
+      <div class="comment-header">
+        <h5>{{comment.score}}</h5>
+        <h4>
+          <span class="author">
+            {{comment.author.username}}
+          </span>
+        </h4>
+      </div>
+
+    <h5>
+      {{comment.created.strftime("%b %d, %Y")}}
+    </h5>
+    {% if comment.created != comment.last_modified %}
+    <p>
+      Edited on: {{comment.last_modified.strftime("%b %d, %Y")}}
+    </p>
+    {% endif %}
+
+    {% if username|string() == comment.author.username|string() %}
+    <a href="/blog/{{comment.post.key().id()}}/comment.key().id()/edit">
+      <h5>
+        Edit
+        {{comment.author.username}}
+        {{username}}
+      </h5>
+    </a>
+    {% endif %}
+
+
+    <form method="post">
+      <input type="hidden" name="vote_id" value={{comment.key().id()}} />
+      <input type="submit" name="vote" value="Upvote" />
+      <input type="submit" name="vote" value="Downvote" />
+    </form>
+
+  </div>
+
+  <p>
+    {{comment.comment | safe}}
+  </p>
+</div>

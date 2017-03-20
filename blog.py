@@ -154,11 +154,11 @@ class Blog(Handler):
             "select * from Post order by created desc limit 10"
             )
         cached_key = self.get_cookie("cached_key")
-        cached_score = self.get_cookie("cached_score")
-        if cached_score and cached_key:
-            posts[int(cached_key)].score = int(cached_score)
+        cached_data = self.get_cookie("cached_data")
+        if cached_key and db.get(cached_key):
+            posts[int(cached_key)].score = int(cached_data)
             self.set_cookie("cached_key", "")
-            self.set_cookie("cached_score", "")
+            self.set_cookie("cached_data", "")
 
         self.render(
             'blog.html',
@@ -170,20 +170,21 @@ class Blog(Handler):
         """Handle the POST action."""
         key = db.Key.from_path(
             'Post',
-            int(self.request.get("post_id")),
+            int(self.request.get("vote_id")),
             parent=post_key()
             )
-        post = db.get(key)
+        vote_item = db.get(key)
         vote = self.request.get("vote")
         username = self.get_cookie("username")
 
-        if vote == "Upvote":
-            post.upvote(username)
-        elif vote == "Downvote":
-            post.downvote(username)
-        post.put()
-        self.set_cookie("cached_key", str(post.key().id()))
-        self.set_cookie("cached_score", str(post.score))
+        if username != "":
+            if vote == "Upvote":
+                vote_item.upvote(username)
+            elif vote == "Downvote":
+                vote_item.downvote(username)
+            vote_item.put()
+            self.set_cookie("cached_key", str(vote_item.key().id()))
+            self.set_cookie("cached_data", str(vote_item.score))
         self.redirect_to('Blog')
 
 
@@ -194,16 +195,66 @@ class PostPage(Handler):
         """Get the post entry page from the url."""
         key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
         post = db.get(key)
-
         if not post:
             logging.debug("\n404 Page Not Found\n")
             self.error(404)
+
+        cached_key = self.get_cookie("cached_key")
+        cached_data = self.get_cookie("cached_data")
+
+        if cached_key and cached_key in post.comments:
+            cached_comment = db.get(cached_key)
+            if cached_comment:
+                cached_comment.author.username = cached_data
+                self.set_cookie("cached_key", "")
+                self.set_cookie("cached_data", "")
+
+        logging.debug("\n\nUsername: %s\n\n" % self.get_cookie("username"))
 
         self.render(
             "permalink.html",
             post=post,
             username=self.get_cookie("username")
             )
+
+    def post(self, **kw):
+        """Save comment in the database."""
+        comment = self.request.get('comment')
+        author = find_by_name(self.get_cookie('username'))
+
+        key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
+        post = db.get(key)
+
+        if not author:
+            error = "You must be logged in to comment."
+            return self.render(
+                "permalink.html",
+                post=post,
+                error=error
+                )
+
+        if not comment:
+            error = "Your comment cannot be empty."
+            return self.render(
+                "permalink.html",
+                post=post,
+                error=error
+                )
+
+        else:
+            c = Comment(
+                parent=post.key(),
+                post=post,
+                author=author,
+                comment=comment
+                )
+            c.put()
+            self.set_cookie("cached_key", str(c.key().id()))
+            self.set_cookie("cached_data", c.author.username)
+            return self.render(
+                "permalink.html",
+                post=post,
+                )
 
 
 class NewPost(Handler):
@@ -389,7 +440,7 @@ class LogOut(Handler):
 
 
 class User(db.Model):
-    """Handler for User entities."""
+    """User entities."""
 
     username = db.StringProperty(required=True)
     password = db.StringProperty(required=True)
@@ -397,7 +448,7 @@ class User(db.Model):
 
 
 class Post(db.Model):
-    """Handler for Post entities and blog post rendering."""
+    """Post entities and blog post rendering."""
 
     author = db.ReferenceProperty(
         User,
@@ -445,6 +496,39 @@ class Post(db.Model):
                 self.downvotes.append(key)
             self.score = len(self.upvotes) - len(self.downvotes)
             self.put()
+
+
+class Comment(db.Model):
+    """Comment entities."""
+
+    post = db.ReferenceProperty(
+        Post,
+        collection_name="comments",
+        required=True
+        )
+
+    author = db.ReferenceProperty(
+        User,
+        collection_name="comments",
+        required=True
+        )
+
+    comment = db.TextProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
+    last_modified = db.DateTimeProperty(auto_now=True)
+    score = db.IntegerProperty(default=0)
+    upvotes = db.ListProperty(db.Key)
+    downvotes = db.ListProperty(db.Key)
+
+    def render(self, **kw):
+        """Render template replacing user-input new lines with line breaks."""
+        self.comment = self.comment.replace('\n', '<br>')
+        kw["comment"] = self
+
+        return render_str(
+            "comment.html",
+            **kw
+            )
 
 
 app = webapp2.WSGIApplication([
