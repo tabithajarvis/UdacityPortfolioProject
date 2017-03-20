@@ -154,8 +154,9 @@ class Blog(Handler):
             "select * from Post order by created desc limit 10"
             )
         cached_key = self.get_cookie("cached_key")
+        cached_type = self.get_cookie("cached_type")
         cached_data = self.get_cookie("cached_data")
-        if cached_key and db.get(cached_key):
+        if cached_type == "Post" and db.get(cached_key):
             posts[int(cached_key)].score = int(cached_data)
             self.set_cookie("cached_key", "")
             self.set_cookie("cached_data", "")
@@ -184,12 +185,17 @@ class Blog(Handler):
                 vote_item.downvote(username)
             vote_item.put()
             self.set_cookie("cached_key", str(vote_item.key().id()))
+            self.set_cookie("cached_type", "Post")
             self.set_cookie("cached_data", str(vote_item.score))
         self.redirect_to('Blog')
 
 
 class PostPage(Handler):
-    """Handle the individual blog entry pages."""
+    """Handle the individual blog entry pages.
+
+    This page gets an individual post, and shows all comments for that post
+    as well as a comment entry box.
+    """
 
     def get(self, **kw):
         """Get the post entry page from the url."""
@@ -200,13 +206,15 @@ class PostPage(Handler):
             self.error(404)
 
         cached_key = self.get_cookie("cached_key")
+        cached_type = self.get_cookie("cached_type")
         cached_data = self.get_cookie("cached_data")
 
-        if cached_key and cached_key in post.comments:
+        if cached_type == "Comment" and db.get(cached_key):
             cached_comment = db.get(cached_key)
             if cached_comment:
                 cached_comment.author.username = cached_data
                 self.set_cookie("cached_key", "")
+                self.set_cookie("cached_type", "")
                 self.set_cookie("cached_data", "")
 
         logging.debug("\n\nUsername: %s\n\n" % self.get_cookie("username"))
@@ -250,11 +258,9 @@ class PostPage(Handler):
                 )
             c.put()
             self.set_cookie("cached_key", str(c.key().id()))
+            self.set_cookie("cached_type", "Comment")
             self.set_cookie("cached_data", c.author.username)
-            return self.render(
-                "permalink.html",
-                post=post,
-                )
+            return self.redirect('/blog/%s' % str(post.key().id()))
 
 
 class NewPost(Handler):
