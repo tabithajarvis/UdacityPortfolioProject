@@ -11,11 +11,11 @@
       </div>
 
     <h5>
-      {{comment.created.strftime("%b %d, %Y")}}
+      {{comment.created.strftime("%b %d, %Y, %I:%M:%S")}}
     </h5>
     {% if comment.created != comment.last_modified %}
     <p>
-      Edited on: {{comment.last_modified.strftime("%b %d, %Y")}}
+      Edited on: {{comment.last_modified.strftime("%b %d, %Y, %I:%M:%S")}}
     </p>
     {% endif %}
 

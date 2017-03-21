@@ -37,7 +37,7 @@
 </form>
 
 <div>
-  {% for c in post.comments %}
+  {% for c in comments %}
     {{ c.render(username=username) | safe }}
     <br />
     <hr />
