@@ -27,21 +27,23 @@
 <form method=post>
   <label>
     <h3>
-      Add Comment
+      Edit Comment
     </h3>
-    <textarea class="comment-input" name="comment"></textarea>
+    <textarea class="comment-input" name="comment">{{comment}}</textarea>
   </label>
   <div>
-    <input type=submit name="add_comment" value="Add Comment">
+    <input type=submit name="edit_comment" value="Submit Changes">
   </div>
 </form>
 
 <div>
   {% for c in post.comments %}
-    {{ c.render(username=username) | safe }}
-    <br />
-    <hr />
-    <br />
+    {% if c.key().id() != comment_id%}
+      {{ c.render(username=username) | safe }}
+      <br />
+      <hr />
+      <br />
+    {% endif %}
   {% endfor %}
 </div>
 {% endblock %}

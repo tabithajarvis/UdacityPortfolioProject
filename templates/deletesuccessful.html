@@ -1,0 +1,20 @@
+{% extends "blog.html" %}
+
+{% block content %}
+<h2>
+  {{type}} Deleted
+</h2>
+
+<p>
+  {{type}} has been successfully deleted.
+</p>
+
+<a href="/blog">
+  <div class="action-link">
+    <h5>
+      Return to Blog Home
+    </h5>
+  </div>
+</a>
+
+{% endblock %}

@@ -20,20 +20,25 @@
     {% endif %}
 
     {% if username|string() == comment.author.username|string() %}
-    <a href="/blog/{{comment.post.key().id()}}/comment.key().id()/edit">
-      <h5>
-        Edit
-        {{comment.author.username}}
-        {{username}}
-      </h5>
+    <a href="/blog/{{comment.post.key().id()}}/{{comment.key().id()}}/edit">
+      <div class="action-link">
+        <h5>
+          Edit
+        </h5>
+      </div>
     </a>
+
+    <form method=post>
+      <input type="hidden" name="delete_comment" value={{comment.key().id()}}>
+      <input class="action-link" type="submit" name="delete" value="Delete Comment">
+    </form>
     {% endif %}
 
 
     <form method="post">
-      <input type="hidden" name="vote_id" value={{comment.key().id()}} />
-      <input type="submit" name="vote" value="Upvote" />
-      <input type="submit" name="vote" value="Downvote" />
+      <input type="hidden" name="vote_comment" value={{comment.key().id()}} />
+      <input class="action-link" type="submit" name="vote" value="Upvote" />
+      <input class="action-link" type="submit" name="vote" value="Downvote" />
     </form>
 
   </div>

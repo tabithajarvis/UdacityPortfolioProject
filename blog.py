@@ -27,6 +27,7 @@ import os
 import re
 import hmac
 import logging
+from datetime import datetime
 
 import webapp2
 import jinja2
@@ -88,7 +89,7 @@ def find_by_name(username):
 
 def make_secure_val(val):
     """Create a salted hash password for cookie storage."""
-    return '%s|%s' % (val, hmac.new(secret, val).hexdigest())
+    return '%s|%s' % (val, hmac.new(secret, str(val)).hexdigest())
 
 
 def check_secure_val(secure_val):
@@ -153,11 +154,27 @@ class Blog(Handler):
         posts = db.GqlQuery(
             "select * from Post order by created desc limit 10"
             )
-        cached_key = self.get_cookie("cached_key")
+
+        # Get any locally cached info for quick local updates.  This
+        # compensates for database updates being slower than database reads.
         cached_type = self.get_cookie("cached_type")
+        cached_key = self.get_cookie("cached_key")
         cached_data = self.get_cookie("cached_data")
-        if cached_type == "Post" and db.get(cached_key):
+
+        logging.debug("\n\nCached Type is: %s\n\n" % cached_type)
+
+        # If "Vote Post" is cached, locally set the score of that post.
+        if cached_type == "VotePost" and int(cached_key) in posts:
             posts[int(cached_key)].score = int(cached_data)
+            self.set_cookie("cached_type", "")
+            self.set_cookie("cached_key", "")
+            self.set_cookie("cached_data", "")
+
+        # If "Delete Post" is cached, remove post locally.
+        elif cached_type == "DeletePost" and int(cached_key) in posts:
+            logging.debug("\n\n Cookie reading is all good \n\n")
+            del posts[int(cached_key)]
+            self.set_cookie("cached_type", "")
             self.set_cookie("cached_key", "")
             self.set_cookie("cached_data", "")
 
@@ -169,6 +186,7 @@ class Blog(Handler):
 
     def post(self):
         """Handle the POST action."""
+        # Currently, the only post option on the blog post is voting.
         key = db.Key.from_path(
             'Post',
             int(self.request.get("vote_id")),
@@ -184,9 +202,10 @@ class Blog(Handler):
             elif vote == "Downvote":
                 vote_item.downvote(username)
             vote_item.put()
+            self.set_cookie("cached_type", "VotePost")
             self.set_cookie("cached_key", str(vote_item.key().id()))
-            self.set_cookie("cached_type", "Post")
             self.set_cookie("cached_data", str(vote_item.score))
+
         self.redirect_to('Blog')
 
 
@@ -209,17 +228,25 @@ class PostPage(Handler):
         cached_type = self.get_cookie("cached_type")
         cached_data = self.get_cookie("cached_data")
 
-        if cached_type == "Comment" and db.get(cached_key):
+        if cached_type == "NewComment" and db.get(cached_key):
             cached_comment = db.get(cached_key)
             if cached_comment:
                 cached_comment.author.username = cached_data
                 self.set_cookie("cached_key", "")
                 self.set_cookie("cached_type", "")
                 self.set_cookie("cached_data", "")
+        elif cached_type == "VoteComment" and int(cached_key) in post.comments:
+            post.comments[int(cached_key)].score = int(cached_data)
+            self.set_cookie("cached_type", "")
+            self.set_cookie("cached_key", "")
+            self.set_cookie("cached_data", "")
+        elif cached_type == "DeleteComment" and db.get(cached_key):
+            del post.comments['cached_key']
+            self.set_cookie("cached_type", "")
+            self.set_cookie("cached_key", "")
+            self.set_cookie("cached_data", "")
 
-        logging.debug("\n\nUsername: %s\n\n" % self.get_cookie("username"))
-
-        self.render(
+        return self.render(
             "permalink.html",
             post=post,
             username=self.get_cookie("username")
@@ -227,13 +254,23 @@ class PostPage(Handler):
 
     def post(self, **kw):
         """Save comment in the database."""
-        comment = self.request.get('comment')
-        author = find_by_name(self.get_cookie('username'))
-
+        user = find_by_name(self.get_cookie('username'))
         key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
         post = db.get(key)
 
-        if not author:
+        if self.request.get('add_comment'):
+            return self.add_comment(user, post)
+
+        if self.request.get('delete_comment'):
+            return self.delete_comment(user, post)
+
+        if self.request.get('vote_comment'):
+            return self.vote_comment(user, post)
+
+    def add_comment(self, user, post):
+        """Add comment if logged in."""
+        comment = self.request.get('comment')
+        if not user:
             error = "You must be logged in to comment."
             return self.render(
                 "permalink.html",
@@ -253,14 +290,51 @@ class PostPage(Handler):
             c = Comment(
                 parent=post.key(),
                 post=post,
-                author=author,
+                author=user,
                 comment=comment
                 )
             c.put()
+            self.set_cookie("cached_type", "NewComment")
             self.set_cookie("cached_key", str(c.key().id()))
-            self.set_cookie("cached_type", "Comment")
-            self.set_cookie("cached_data", c.author.username)
+            self.set_cookie("cached_data", str(c.author.username))
             return self.redirect('/blog/%s' % str(post.key().id()))
+
+    def vote_comment(self, user, post):
+        """Vote on comment if logged in and not author."""
+        key = db.Key.from_path(
+            'Comment',
+            int(self.request.get("vote_comment")),
+            parent=post.key()
+            )
+        vote_item = db.get(key)
+        vote = self.request.get("vote")
+
+        if user and user.username != vote_item.author.username:
+            if vote == "Upvote":
+                vote_item.upvote(user.username)
+            elif vote == "Downvote":
+                vote_item.downvote(user.username)
+            vote_item.put()
+            self.set_cookie("cached_type", "VoteComment")
+            self.set_cookie("cached_key", str(vote_item.key().id()))
+            self.set_cookie("cached_data", str(vote_item.score))
+            self.redirect('/blog/%s' % str(post.key().id()))
+
+    def delete_comment(self, user, post):
+        """Delete comment if author."""
+        key = db.Key.from_path(
+            'Comment',
+            int(self.request.get("delete_comment")),
+            parent=post.key()
+            )
+        comment = db.get(key)
+        if user and str(user.username) == str(comment.author.username):
+            self.set_cookie("cached_type", "DeleteComment")
+            self.set_cookie("cached_key", str(key.id()))
+            self.set_cookie("cached_data", str(comment.author.username))
+            comment.delete()
+            self.redirect('/blog/%s' % str(post.key().id()))
+
 
 
 class NewPost(Handler):
@@ -333,7 +407,7 @@ class EditPost(Handler):
                 if title and blogpost:
                     post.title = title
                     post.blogpost = blogpost
-                    post.last_modified = db.DateTimeProperty(auto_now=True)
+                    post.last_modified = datetime.now()
                     post.put()
                     return self.redirect('/blog/%s' % kw['post_id'])
                 else:
@@ -345,11 +419,93 @@ class EditPost(Handler):
 
         self.render(
             'editpost.html',
-            title=title,
-            blogpost=blogpost,
-            post_id=kw['post_id'],
+            post=post,
             error=error
             )
+
+
+class EditComment(Handler):
+    """Handle the edit comment pages."""
+
+    def get(self, **kw):
+        """Get the blog edit page from the url."""
+        p_key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
+        post = db.get(p_key)
+        c_key = db.Key.from_path('Comment', int(kw['comment_id']), parent=p_key)
+        comment = db.get(c_key)
+        username = self.get_cookie('username')
+        if username == comment.author.username:
+            self.render(
+                'editcomment.html',
+                post=post,
+                comment=comment.comment,
+                comment_id=kw['comment_id']
+                )
+        else:
+            return self.redirect('/blog/%s' % kw['post_id'])
+
+    def post(self, **kw):
+        """Update the comment."""
+        username = self.get_cookie('username')
+        comment = self.request.get('comment')
+
+        p_key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
+        post = db.get(p_key)
+        c_key = db.Key.from_path('Comment', int(kw['comment_id']), parent=p_key)
+        comm = db.get(c_key)
+
+        if post and comm and username:
+            if username == comm.author.username:
+                if comment:
+                    comm.comment = comment
+                    comm.last_modified = datetime.now()
+                    comm.put()
+                    return self.redirect('/blog/%s' % kw['post_id'])
+                else:
+                    error = "Please enter an edited comment."
+            else:
+                error = "You are not authorized to edit this comment."
+        else:
+            error = "Cannot access comment."
+
+        self.render(
+            'editpost.html',
+            post=post,
+            error=error
+            )
+
+
+class DeletePost(Handler):
+    """Handle the delete blog post page."""
+
+    def get(self, **kw):
+        """Get the delete post confirmation page."""
+        key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
+        post = db.get(key)
+        username = self.get_cookie('username')
+        if post and username == post.author.username:
+            self.render(
+                'deletepost.html',
+                post=post
+                )
+        else:
+            return self.redirect_to('Blog')
+
+    def post(self, **kw):
+        """Delete the post."""
+        key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
+        post = db.get(key)
+        post.delete()
+
+        return self.redirect_to('Deleted')
+
+
+class Deleted(Handler):
+    """Handler for successful delete message page."""
+
+    def get(self):
+        """Display delete successful message"""
+        return self.render('deletesuccessful.html', type="Post")
 
 
 class SignUp(Handler):
@@ -536,14 +692,41 @@ class Comment(db.Model):
             **kw
             )
 
+    def upvote(self, username):
+        """Handle this post's downvote action."""
+        key = user_key(username)
+
+        if key not in self.upvotes and username != self.author.username:
+            if key in self.downvotes:
+                self.downvotes.remove(key)
+            else:
+                self.upvotes.append(key)
+            self.score = len(self.upvotes) - len(self.downvotes)
+            self.put()
+
+    def downvote(self, username):
+        """Handle this post's downvote action."""
+        key = user_key(username)
+
+        if key not in self.downvotes and username != self.author.username:
+            if key in self.upvotes:
+                self.upvotes.remove(key)
+            else:
+                self.downvotes.append(key)
+            self.score = len(self.upvotes) - len(self.downvotes)
+            self.put()
+
 
 app = webapp2.WSGIApplication([
     webapp2.Route('/', MainPage, 'MainPage'),
     webapp2.Route('/blog', Blog, 'Blog'),
     webapp2.Route('/blog/newpost', NewPost, 'NewPost'),
-    webapp2.Route('/blog/<post_id:([0-9]+)>/edit', EditPost, 'EditPost'),
     webapp2.Route('/blog/<post_id:([0-9]+)>', PostPage, 'PostPage'),
-    webapp2.Route('/blog/signup', SignUp, 'SignUp'),
+    webapp2.Route('/blog/<post_id:([0-9]+)>/edit', EditPost, 'EditPost'),
+    webapp2.Route('/blog/<post_id:([0-9]+)>/delete', DeletePost, 'DeletePost'),
+    webapp2.Route('/blog/<post_id:([0-9]+)>/<comment_id:([0-9]+)>/edit', EditComment, 'EditComment'),
+    webapp2.Route('/blog/deletesuccessful', Deleted, 'Deleted'),
     webapp2.Route('/blog/signin', SignIn, 'SignIn'),
+    webapp2.Route('/blog/signup', SignUp, 'SignUp'),
     webapp2.Route('/blog/logout', LogOut, 'LogOut'),
     ], debug=True)

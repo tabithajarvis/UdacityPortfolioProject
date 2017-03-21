@@ -22,15 +22,6 @@
     </p>
     {% endif %}
 
-    {% if username == post.author.username %}
-    <a href="/blog/{{post.key().id()}}/edit">
-      <h5>
-        Edit
-      </h5>
-    </a>
-    {% endif %}
-
-
     <form method="post">
       <input type="hidden" name="vote_id" value={{post.key().id()}} />
       <input type="submit" name="vote" value="Upvote" />
