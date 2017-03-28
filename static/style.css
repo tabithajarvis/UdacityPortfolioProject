@@ -1,216 +1,147 @@
 /* Tag restyling */
 body {
-  margin: 5% 10%;
   font-family: "Raleway", sans-serif;
-  font-size: 16px;
-  line-height: 1.25;
 }
 
 a:hover, a:visited, a:link, a:active
 {
-    text-decoration: none;
-}
-
-hr {
-  width: 100%;
-  margin-top: 15px;
-  margin-bottom: 15px;
+   /* Remove blue coloring and underlines */
+  /*  text-decoration: none;*/
 }
 
 h1 {
   color: #2d3c49;
-  font-size: 4em;
   font-weight: 200;
   text-transform: uppercase;
-  margin: .5em 0;
 }
 
 h2 {
   color: #7d97ad;
-  font-size: 3em;
-  margin: .5em 0;
 }
 
 h3 {
   color: #2d3c49;
-  font-size: 2em;
   text-transform: uppercase;
-  margin: 0;
 }
 
 h4 {
   color: #2d3c49;
-  font-size: 1.5em;
   text-transform: uppercase;
-  margin: 10px;
 }
 
 h5 {
   color: #2d3c49;
-  font-size: 1.5em;
-  margin: 10px;
-}
-
-@media screen and (max-width: 850px) {
-  h1 {
-    font-size: 3em;
-  }
-
-  h2 {
-    font-size: 2em;
-  }
-
-  h3 {
-    font-size: 1.5em;
-  }
-
-  h4 {
-    font-size: 1em;
-  }
-
-  h5 {
-    font-size: 1em;
-  }
-
 }
 
 p {
   color: #2d3c49;
-  text-overflow: clip;
 }
 
 input[type=text] {
-  width: 100%;
-  margin: 8px 0;
-  border: 2px solid #7d97ad;
-  font-size: 1.25em;
 }
 
 input[type=password] {
-  width: 100%;
-  margin: 8px 0;
-  border: 2px solid #7d97ad;
-  font-size: 1.25em;
 }
 
 input[type=submit] {
-  padding: .5em .5em;
-  margin: 8px 0;
 }
 
 textarea {
-  width: 80vw;
-  height: 40vw;
-  margin: 8px 0;
-  border: 2px solid #7d97ad;
 }
 
-.header {
-  display: block;
+.border-bottom {
   border-bottom: 3px solid #7d97ad;
-  padding-bottom: 20px;
-  margin-bottom: 20px;
+  padding: 50px 0;
 }
-
-/* Header logo */
-.header-logo {
-  width: 100%;
-  max-width: 10vw;
-}
-
-/* To hide logo on smaller viewports */
-/* @media screen and (max-width: 850px) {
-  .header-logo {
-    display: none;
-  }
-} */
 
 /* Header title and subtitle container */
-.header-title {
+.page-title {
   text-align: right;
+  font-size: 4em;
 }
 
-@media screen and (max-width: 850px) {
-  .header-title {
+.page-subtitle {
+  text-align: right;
+  font-size: 2em;
+}
+
+@media screen and (max-width: 687px) {
+  .page-title {
+    text-align: center;
+  }
+
+  .page-subtitle {
     text-align: center;
   }
 }
 
-/* Large home page picture */
-.frontpage-picture{
-  max-width: 100%;
-  margin-top: 20px;
-  margin-bottom: 20px;
+.logo {
+  padding: 20px;
 }
 
-/* To hide frontpage picture on smaller viewports */
-/* @media screen and (max-width: 850px) {
-  .frontpage-picture {
-    display: none;
-  }
-} */
+/* Large home page picture */
+.full-screen{
+  padding: 0;
+  margin: 0;
+}
 
-@media screen and (max-width: 850px) {
-  .featured-work-sect {
+@media screen and (max-width: 768px) {
+  .section-title {
     text-align: center;
   }
 }
 
 /* Featured section container */
 .featured {
-  width: 100%;
-  display: inline-flex;
   text-align: center;
-  flex: auto;
-  flex-wrap: wrap;
-  margin-top: 5px;
-}
-
-@media screen and (max-width: 850px) {
-  .featured {
-    display: block;
-  }
 }
 
 /* Featured item */
 .featured-item {
+  padding: 25px 0;
   text-align: center;
   font-size: 1.5vw;
-  max-width: 30%;
-  margin-bottom: 75px;
 }
 
-@media screen and (min-width: 851px) {
-  .featured-item + .featured-item {
-    margin-left: 5%;
-  }
-}
-
-@media screen and (max-width: 850px) {
+@media screen and (max-width: 768px) {
   .featured-item {
-    font-size: 100%;
-    max-width: 100%;
     border-bottom: 2px solid #7d97ad;
   }
 }
 
-/* Featured items image */
-.featured-item-img {
-  max-width: 100%;
+.user-info {
+  text-align: right;
 }
 
 .action-link {
   background-color: #7d97ad;
+  padding: 0 15px;
+  display: inline;
+}
+
+.inline {
+  display: inline;
+}
+
+.block {
+  display: block;
 }
 
 .blog-title {
   background-color: #ddd;
-  display: block;
-  padding: 1em 0;
+  padding: 5px 15px;
+}
+
+.blog-section {
+  margin: 10px 0;
+  padding: 0 25px;
+}
+
+.border-side {
+  border-right: 1px solid #2d3c49;
 }
 
 .recent-posts {
-  padding: 50px 0;
 }
 
 .label {
@@ -219,19 +150,13 @@ textarea {
 
 .error {
   color: red;
+  padding-left: 15px;
 }
 
 .comment-post {
-  width: 80vw;
   background-color: #ddd;
+  padding-bottom: 15px;
 }
 
 .comment-header {
-  border: 1px solid #2d3c49;
-}
-
-.comment-input {
-  width: 50vw;
-  height: 10vw;
-
 }

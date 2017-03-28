@@ -1,63 +1,74 @@
 {% extends "base.html" %}
 
 {% block header %}
+<div class="container border-bottom">
 <!-- Header section -->
-  <header class="header">
+  <header class="row-fluid header">
     <a href="/blog">
-      <h1>
+      <h1 class="col-xs-12 page-title">
         Front-End Blog
       </h1>
     </a>
+    <h4 class="col-xs-12 page-subtitle">
+      Home
+    </h4>
   </header>
+</div>
 {% endblock %}
 
 {% block content %}
-  {% if username %}
-  <h5>
-    Welcome, {{username}}!
-  </h5>
-  <p>
-    <a href="/blog/logout">
-      Log Out
-    </a>
-  </p>
-  {% else %}
-  <p>
-    New User?
-    <a href="/blog/signup">
-      Sign Up
-    </a>
-  </p>
-  <p>
-    Already Registered?
-    <a href="/blog/signin">
-      Sign In
-    </a>
-  </p>
-  {% endif %}
-
-  <a href="/blog/newpost">
-    <div class="action-link">
-      <h4>
-        +Add New Blog Post
-      </h4>
+<div class="container">
+  <div class="row">
+    {% if username %}
+    <div class="col-xs-12 col-sm-6 col-md-4">
+      <br>
+      <form action="/blog/newpost">
+        <button class="action-link" type=submit>
+          <h3>
+            +Add New Blog Post
+          </h3>
+        </button>
+      </form>
     </div>
-  </a>
 
-  <br />
-  <br />
-
-  <h2>
-    Newest Posts
-  </h2>
-
-  <div>
-    {% for p in posts %}
-      {{ p.render(username=username) | safe }}
-      <br />
-      <hr />
-      <br />
-    {% endfor %}
+    <h3 class="col-xs-12 col-sm-6 col-md-8 user-info">
+      Welcome, {{username}}!
+    </h3>
+    <h4 class="col-xs-12 col-sm-6 col-md-8 user-info">
+      <a href="/blog/logout">
+        Log Out
+      </a>
+    </h4>
+    {% else %}
+    <h4 class="col-xs-12 user-info">
+      New User?
+      <a href="/blog/signup">
+        Sign Up
+      </a>
+    </h4>
+    <h4 class="col-xs-12 user-info">
+      Already Registered?
+      <a href="/blog/signin">
+        Sign In
+      </a>
+    </h4>
+    {% endif %}
   </div>
 
+  <div class="row section-title">
+    <div class="col-xs-12">
+      <h2>
+        Newest Posts
+      </h2>
+      <hr />
+    </div>
+  </div>
+
+  {% for p in posts %}
+    {{ p.render(username=username) | safe }}
+    <br />
+    <hr />
+    <br />
+  {% endfor %}
+</div>
 {% endblock %}

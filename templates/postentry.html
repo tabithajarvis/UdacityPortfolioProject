@@ -1,27 +1,30 @@
 {% extends "blog.html "%}
 
 {% block title %}
+  <title>Add New Post</title>
 {% endblock %}
 
 {% block content %}
-<form method="post">
+<div class="container">
+  <form method="post">
 
-  <label>
-    <h3>
-      Title
-    </h3>
-    <input type="text" name="title" value="{{title}}" />
-  </label>
+    <label class="row block">
+      <h3 class="col-xs-12">
+        Title
+      </h3>
+      <input class="col-xs-12 col-md-6" type="text" name="title" value="{{title}}" />
+    </label>
 
-  <label>
-    <h3>
-      Blog Post
-    </h3>
-    <textarea name="blogpost">{{blogpost}}</textarea>
-  </label>
+    <label class="row block">
+      <h3 class="col-xs-12">
+        Blog Post
+      </h3>
+      <textarea class="col-xs-12 col-md-6" name="blogpost">{{blogpost}}</textarea>
+    </label>
 
-  <div class="error">{{error}}</div>
+    <div class="error">{{error}}</div>
 
-  <input type="submit">
-</form>
+    <input type="submit">
+  </form>
+</div>
 {% endblock %}

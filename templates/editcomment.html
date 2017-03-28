@@ -22,19 +22,26 @@
 
 {{post.render() | safe}}
 
-<hr />
+<div class="container">
+  <hr />
 
-<form method=post>
-  <label>
-    <h3>
-      Edit Comment
-    </h3>
-    <textarea class="comment-input" name="comment">{{comment}}</textarea>
-  </label>
-  <div>
-    <input type=submit name="edit_comment" value="Submit Changes">
-  </div>
-</form>
+    <form method=post>
+      <div class="row">
+        <label class="col-xs-12">
+          <h3>
+            Edit Comment
+          </h3>
+          <textarea rows="5" columns="100" class="col-xs-12 col-md-6" name="comment">{{comment}}</textarea>
+        </label>
+      </div>
+      <div>
+        <input type=submit name="edit_comment" value="Submit Changes">
+      </div>
+    </form>
+
+    <br />
+    <br />
+</div>
 
 <div>
   {% for c in post.comments %}

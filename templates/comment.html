@@ -1,49 +1,50 @@
-<div class="comment-post">
-  <div>
+<div class="container comment-post">
+  <div class="row">
 
-      <div class="comment-header">
-        <h5>{{comment.score}}</h5>
-        <h4>
-          <span class="author">
-            {{comment.author.username}}
-          </span>
-        </h4>
-      </div>
+    <div class="col-xs-12 col-sm-3">
+      <h3>{{comment.score}}</h3>
+      <form method="post">
+        <input type="hidden" name="vote_comment" value={{comment.key().id()}} />
+        <button type="submit" name="vote" value="Upvote">Upvote</button>
+        <button type="submit" name="vote" value="Downvote">Downvote</button>
+      </form>
 
-    <h5>
-      {{comment.created.strftime("%b %d, %Y, %I:%M:%S")}}
-    </h5>
-    {% if comment.created != comment.last_modified %}
-    <p>
-      Edited on: {{comment.last_modified.strftime("%b %d, %Y, %I:%M:%S")}}
-    </p>
-    {% endif %}
+      <h5>
+        <b>Author: </b>{{comment.author.username}}
+      </h5>
 
-    {% if username|string() == comment.author.username|string() %}
-    <a href="/blog/{{comment.post.key().id()}}/{{comment.key().id()}}/edit">
-      <div class="action-link">
-        <h5>
+      <h5>
+        <b>Posted: </b>{{comment.created.strftime("%b %d, %Y")}}
+      </h5>
+      {% if comment.created != comment.last_modified %}
+      <p>
+        <b>Edited on: </b>{{comment.last_modified.strftime("%b %d, %Y")}}
+      </p>
+      {% endif %}
+
+      {% if username|string() == comment.author.username|string() %}
+      <form class="inline" action="/blog/{{comment.post.key().id()}}/{{comment.key().id()}}/edit">
+        <button class="action-link" type=submit>
           Edit
-        </h5>
-      </div>
-    </a>
+        </button>
+      </form>
 
-    <form method=post>
-      <input type="hidden" name="delete_comment" value={{comment.key().id()}}>
-      <input class="action-link" type="submit" name="delete" value="Delete Comment">
-    </form>
-    {% endif %}
+      <form class="inline" method=post>
+        <input type="hidden" name="delete_comment" value={{comment.key().id()}}>
+        <input class="action-link" type="submit" name="delete" value="Delete">
+      </form>
+      {% endif %}
 
+    </div>
 
-    <form method="post">
-      <input type="hidden" name="vote_comment" value={{comment.key().id()}} />
-      <input class="action-link" type="submit" name="vote" value="Upvote" />
-      <input class="action-link" type="submit" name="vote" value="Downvote" />
-    </form>
+    <div class="col-xs-12 col-sm-9">
+      <br />
+      <br />
+      <p>
+        {{comment.comment | safe}}
+      </p>
+    </div>
 
   </div>
 
-  <p>
-    {{comment.comment | safe}}
-  </p>
 </div>

@@ -1,20 +1,24 @@
 {% extends "blog.html" %}
 
 {% block content %}
-<h2>
-  Post Deleted
-</h2>
+<div class="container">
+  <h2 class="row">
+    Post Deleted
+  </h2>
 
-<p>
-  Post has been successfully deleted.
-</p>
+  <br>
+  <p class="row">
+    Post has been successfully deleted.
+  </p>
 
-<a href="/blog">
-  <div class="action-link">
-    <h5>
-      Return to Blog Home
-    </h5>
-  </div>
-</a>
+  <br>
+  <form class="row" action="/blog">
+    <button class="action-link" type=submit>
+      <h3>
+        Return to Blog Home
+      </h3>
+    </button>
+  </form>
 
+</div>
 {% endblock %}

@@ -1,36 +1,44 @@
-<div class="blog-post">
-  <div>
+<div class="container">
+  <div class="row">
+    <br>
+    <div class="col-xs-12 col-sm-3">
+      <h3>
+        {{post.score}}
+      </h3>
 
-    <a href='/blog/{{post.key().id()}}'>
-      <div class="blog-title">
-        <h5>{{post.score}}</h5>
-        <h4>
-          {{post.title}}
-          <span class="author">
-            {{post.author.username}}
-          </span>
-        </h4>
-      </div>
-    </a>
+      <form method="post">
+        <input type="hidden" name="vote_id" value={{post.key().id()}} />
+        <input type="submit" name="vote" value="Upvote" />
+        <input type="submit" name="vote" value="Downvote" />
+      </form>
 
-    <h5>
-      {{post.created.strftime("%b %d, %Y")}}
-    </h5>
-    {% if post.created != post.last_modified %}
-    <p>
-      Edited on: {{post.last_modified.strftime("%b %d, %Y")}}
-    </p>
-    {% endif %}
+      <h5>
+        <b>Author: </b>{{post.author.username}}
+      </h5>
 
-    <form method="post">
-      <input type="hidden" name="vote_id" value={{post.key().id()}} />
-      <input type="submit" name="vote" value="Upvote" />
-      <input type="submit" name="vote" value="Downvote" />
-    </form>
+      <h5>
+        <b>Posted: </b>{{post.created.strftime("%b %d, %Y")}}
+      </h5>
+      {% if post.created != post.last_modified %}
+      <p>
+        <b>Edited on: </b>{{post.last_modified.strftime("%b %d, %Y")}}
+      </p>
+      {% endif %}
+    </div>
 
+    <div class="col-xs-12 col-sm-9">
+      <a href='/blog/{{post.key().id()}}'>
+        <div class="blog-title">
+          <h4>
+            {{post.title}}
+          </h4>
+        </div>
+      </a>
+      <br />
+      <br />
+      <p>
+        {{post.blogpost | safe}}
+      </p>
+    </div>
   </div>
-
-  <p>
-    {{post.blogpost | safe}}
-  </p>
 </div>

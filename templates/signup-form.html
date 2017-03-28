@@ -1,12 +1,19 @@
 {% extends "blog.html" %}
 
 {% block title %}
-  <h2>Register</h2>
+  <title>Register</title>
 {% endblock %}
 
 {% block content %}
+<div class="container">
+  <h2 class="row">
+    Register
+  </h2>
+
+  <div class="row">
     <form method="post">
       <table>
+        <br>
         <tr>
           <td class="label">
             Username
@@ -56,13 +63,18 @@
         </tr>
       </table>
 
+      <br>
       <input type="submit">
     </form>
 
+    <br>
     <p>
       Already registered?
       <a href="/blog/signin">
         Sign In.
       </a>
     </p>
+
+  </div>
+</div>
 {% endblock %}

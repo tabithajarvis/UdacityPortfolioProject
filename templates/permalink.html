@@ -3,38 +3,54 @@
 {% block content %}
 
 {% if username == post.author.username %}
-<a href="/blog/{{post.key().id()}}/edit">
-  <div class="action-link">
-    <h5>
-      Edit
-    </h5>
-  </div>
-</a>
+<div class="container">
+  <div class="row">
 
-<a href="/blog/{{post.key().id()}}/delete">
-  <div class="action-link">
-    <h5>
-      Delete Post
-    </h5>
+    <div class="col-xs-12">
+      <br />
+      <form class="inline" action="/blog/{{post.key().id()}}/edit">
+        <button class="action-link" type=submit>
+          <h3>
+            Edit
+          </h3>
+        </button>
+      </form>
+
+      <form class="inline" action="/blog/{{post.key().id()}}/delete">
+        <button class="action-link" type=submit>
+          <h3>
+            Delete
+          </h3>
+        </button>
+      </form>
+    </div>
+
   </div>
-</a>
+</div>
 {% endif %}
 
 {{post.render() | safe}}
 
-<hr />
+<div class="container">
+  <hr />
 
-<form method=post>
-  <label>
-    <h3>
-      Add Comment
-    </h3>
-    <textarea class="comment-input" name="comment"></textarea>
-  </label>
-  <div>
-    <input type=submit name="add_comment" value="Add Comment">
-  </div>
-</form>
+    <form method=post>
+      <div class="row">
+        <label class="col-xs-12">
+          <h3>
+            Add Comment
+          </h3>
+          <textarea rows="5" columns="100" class="col-xs-12 col-md-6" name="comment"></textarea>
+        </label>
+      </div>
+      <div>
+        <input type=submit name="add_comment" value="Add Comment">
+      </div>
+    </form>
+
+    <br />
+    <br />
+</div>
 
 <div>
   {% for c in comments %}
