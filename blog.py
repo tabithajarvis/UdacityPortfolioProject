@@ -18,6 +18,10 @@ Example:
 
     https://blog-161405.appspot.compile
 
+TODO:
+    - Sign in page says sign up
+    - upvoting self redirects to blank page
+
 """
 
 import os
@@ -264,7 +268,10 @@ class Permalink(Handler):
 
         # Get post's comments by highest score, then date
         comments = db.Query(Comment).ancestor(key)
-        comments = comments.order('-score').order('-created')
+        if comments:
+            comments = comments.order('-score').order('-created')
+        else:
+            comments = []
 
         return self.render(
             "permalink.html",
