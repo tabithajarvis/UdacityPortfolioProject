@@ -16,11 +16,7 @@ Example:
 
   Or go to the deployed app at:
 
-    https://blog-161405.appspot.compile
-
-TODO:
-    - Sign in page says sign up
-    - upvoting self redirects to blank page
+    https://blog-161405.appspot.com
 
 """
 
@@ -216,8 +212,14 @@ class Blog(Handler):
             self.set_cookie("cached_type", "VotePost")
             self.set_cookie("cached_key", str(vote_item.key().id()))
             self.set_cookie("cached_data", str(vote_item.score))
+            self.redirect_to('Blog')
 
-        self.redirect_to('Blog')
+        # Else, redirect to the sign-in page-title
+        else:
+            self.redirect_to(
+                'SignIn',
+                error="You must be signed in to vote on blog posts."
+                )
 
 
 class Permalink(Handler):
@@ -315,38 +317,41 @@ class Permalink(Handler):
         # Get vote value (Upvote/Downvote)
         vote = self.request.get("vote")
 
-        # If user is logged in and not the post's author, handle vote
-        if user and user.username != post.author.username:
-            if vote == "Upvote":
-                post.upvote(user.username)
-            elif vote == "Downvote":
-                post.downvote(user.username)
-            post.put()
-            # Store vote score for quick local updating
-            self.set_cookie("cached_type", "VotePost")
-            self.set_cookie("cached_key", str(post.key().id()))
-            self.set_cookie("cached_data", str(post.score))
+        # If user is logged in, attempt to handle vote and redirect here
+        if user:
+            # If user is not the post's author, handle vote
+            if user.username != post.author.username:
+                if vote == "Upvote":
+                    post.upvote(user.username)
+                elif vote == "Downvote":
+                    post.downvote(user.username)
+                post.put()
+                # Store vote score for quick local updating
+                self.set_cookie("cached_type", "VotePost")
+                self.set_cookie("cached_key", str(post.key().id()))
+                self.set_cookie("cached_data", str(post.score))
 
-        self.redirect('/blog/%s' % str(post.key().id()))
+            self.redirect('/blog/%s' % str(post.key().id()))
+
+        # Else, redirect to the sign in page
+        else:
+            self.redirect_to(
+                'SignIn',
+                error="You must be signed in to vote on blog posts."
+                )
 
     def add_comment(self, user, post):
         """Add comment if logged in."""
         comment = self.request.get('comment')
         if not user:
             error = "You must be logged in to comment."
-            return self.render(
-                "permalink.html",
-                post=post,
+            return self.redirect_to(
+                'SignIn',
                 error=error
                 )
 
         if not comment:
-            error = "Your comment cannot be empty."
-            return self.render(
-                "permalink.html",
-                post=post,
-                error=error
-                )
+            return self.redirect('/blog/%s' % str(post.key().id()))
 
         else:
             # Add new comment, and put author's name in local cache
@@ -375,19 +380,27 @@ class Permalink(Handler):
         # Get vote value (Upvote/Downvote)
         vote = self.request.get("vote")
 
-        # If user is logged in and not the comment's author, handle vote
-        if user and user.username != vote_item.author.username:
-            if vote == "Upvote":
-                vote_item.upvote(user.username)
-            elif vote == "Downvote":
-                vote_item.downvote(user.username)
-            vote_item.put()
-            # Store vote score for quick local updating
-            self.set_cookie("cached_type", "VoteComment")
-            self.set_cookie("cached_key", str(vote_item.key().id()))
-            self.set_cookie("cached_data", str(vote_item.score))
+        # If user is logged in, attempt to handle vote and redirect here
+        if user:
+            if user.username != vote_item.author.username:
+                if vote == "Upvote":
+                    vote_item.upvote(user.username)
+                elif vote == "Downvote":
+                    vote_item.downvote(user.username)
+                vote_item.put()
+                # Store vote score for quick local updating
+                self.set_cookie("cached_type", "VoteComment")
+                self.set_cookie("cached_key", str(vote_item.key().id()))
+                self.set_cookie("cached_data", str(vote_item.score))
 
-        self.redirect('/blog/%s' % str(post.key().id()))
+            self.redirect('/blog/%s' % str(post.key().id()))
+
+        # Else, redirect to the sign in page
+        else:
+            self.redirect_to(
+                'SignIn',
+                error="You must be signed in to vote on comments."
+                )
 
     def delete_comment(self, user, post):
         """Delete comment if author."""
