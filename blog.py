@@ -195,7 +195,7 @@ class Blog(Handler):
         # Get the post to vote on
         key = db.Key.from_path(
             'Post',
-            int(self.request.get("vote_id")),
+            int(self.request.get("vote_post")),
             parent=post_key()
             )
         vote_item = db.get(key)
@@ -243,8 +243,15 @@ class Permalink(Handler):
         cached_type = self.get_cookie("cached_type")
         cached_data = self.get_cookie("cached_data")
 
+        # If a vote button was pressed, ensure it updates locally quickly
+        if cached_type == "VotePost":
+            post.score = int(cached_data)
+            self.set_cookie("cached_type", "")
+            self.set_cookie("cached_key", "")
+            self.set_cookie("cached_data", "")
+
         # If a new comment was just added, ensure that it updates the user
-        if cached_type == "NewComment" and int(cached_key) in post.comments:
+        elif cached_type == "NewComment" and int(cached_key) in post.comments:
             cached_comment = db.get(cached_key)
             if cached_comment:
                 cached_comment.author.username = cached_data
@@ -290,6 +297,9 @@ class Permalink(Handler):
         user = find_by_name(self.get_cookie('username'))
 
         # Call correct function for which form was called
+        if self.request.get('vote_post'):
+            return self.vote_post(user, post)
+
         if self.request.get('add_comment'):
             return self.add_comment(user, post)
 
@@ -298,6 +308,26 @@ class Permalink(Handler):
 
         if self.request.get('vote_comment'):
             return self.vote_comment(user, post)
+
+    def vote_post(self, user, post):
+        """Vote on post if logged in and not author."""
+
+        # Get vote value (Upvote/Downvote)
+        vote = self.request.get("vote")
+
+        # If user is logged in and not the post's author, handle vote
+        if user and user.username != post.author.username:
+            if vote == "Upvote":
+                post.upvote(user.username)
+            elif vote == "Downvote":
+                post.downvote(user.username)
+            post.put()
+            # Store vote score for quick local updating
+            self.set_cookie("cached_type", "VotePost")
+            self.set_cookie("cached_key", str(post.key().id()))
+            self.set_cookie("cached_data", str(post.score))
+
+        self.redirect('/blog/%s' % str(post.key().id()))
 
     def add_comment(self, user, post):
         """Add comment if logged in."""
@@ -356,7 +386,8 @@ class Permalink(Handler):
             self.set_cookie("cached_type", "VoteComment")
             self.set_cookie("cached_key", str(vote_item.key().id()))
             self.set_cookie("cached_data", str(vote_item.score))
-            self.redirect('/blog/%s' % str(post.key().id()))
+
+        self.redirect('/blog/%s' % str(post.key().id()))
 
     def delete_comment(self, user, post):
         """Delete comment if author."""
@@ -375,7 +406,8 @@ class Permalink(Handler):
             self.set_cookie("cached_key", str(key.id()))
             self.set_cookie("cached_data", str(comment.author.username))
             comment.delete()
-            self.redirect('/blog/%s' % str(post.key().id()))
+
+        self.redirect('/blog/%s' % str(post.key().id()))
 
 
 class NewPost(Handler):
