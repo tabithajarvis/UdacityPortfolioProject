@@ -18,9 +18,6 @@ Example:
 
     https://blog-161405.appspot.compile
 
-TODO:
-    - Fix style of everything
-    - Clean and comment code
 """
 
 import os
