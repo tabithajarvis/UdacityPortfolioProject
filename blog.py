@@ -239,7 +239,7 @@ class Permalink(Handler):
             self.error(404)
 
         # Get cached data
-        '''cached_key = self.get_cookie("cached_key")
+        cached_key = self.get_cookie("cached_key")
         cached_type = self.get_cookie("cached_type")
         cached_data = self.get_cookie("cached_data")
 
@@ -264,8 +264,8 @@ class Permalink(Handler):
             del post.comments['cached_key']
             self.set_cookie("cached_type", "")
             self.set_cookie("cached_key", "")
-            self.set_cookie("cached_data", "")'''
-        
+            self.set_cookie("cached_data", "")
+
         # Get post's comments by highest score, then date
         comments = db.Query(Comment).ancestor(key)
         if comments:

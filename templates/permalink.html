@@ -2,32 +2,32 @@
 
 {% block content %}
 
-{% if username == post.author.username %}
-<div class="container">
-  <div class="row">
+  {% if username == post.author.username %}
+  <div class="container">
+    <div class="row">
 
-    <div class="col-xs-12">
-      <br />
-      <form class="inline" action="/blog/{{post.key().id()}}/edit">
-        <button class="action-link" type=submit>
-          <h3>
-            Edit
-          </h3>
-        </button>
-      </form>
+      <div class="col-xs-12">
+        <br />
+        <form class="inline" action="/blog/{{post.key().id()}}/edit">
+          <button class="action-link" type=submit>
+            <h3>
+              Edit
+            </h3>
+          </button>
+        </form>
 
-      <form class="inline" action="/blog/{{post.key().id()}}/delete">
-        <button class="action-link" type=submit>
-          <h3>
-            Delete
-          </h3>
-        </button>
-      </form>
+        <form class="inline" action="/blog/{{post.key().id()}}/delete">
+          <button class="action-link" type=submit>
+            <h3>
+              Delete
+            </h3>
+          </button>
+        </form>
+      </div>
+
     </div>
-
   </div>
-</div>
-{% endif %}
+  {% endif %}
 
 {{post.render() | safe}}
 
