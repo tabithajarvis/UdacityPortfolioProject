@@ -25,6 +25,7 @@ import re
 import hmac
 import logging
 from datetime import datetime
+from functools import wraps
 
 import webapp2
 import jinja2
@@ -95,6 +96,108 @@ def check_secure_val(secure_val):
     val = secure_val.split('|')[0]
     if secure_val == make_secure_val(val):
         return val
+
+
+# Decorator Fucntions #########################################################
+
+def login_required(f):
+    """Wrap functions that require login with login check."""
+    @wraps(f)
+    def wrapper(self):
+        username = self.get_cookie("username")
+        password = self.get_cookie("password")
+        user = find_by_name(username)
+        if user and password == user.password:
+            return f(self)
+        else:
+            logging.debug("\nUser: %s\nPassword: %s\n" % (username, password))
+            error = "You must be logged in to perform this action."
+            self.redirect_to('SignIn', error=error)
+    return wrapper
+
+
+def post_exists(f):
+    """Wrap functions that occur on a post id to verify post existance."""
+    @wraps(f)
+    def wrapper(self, **kw):
+        key = db.Key.from_path(
+            'Post',
+            int(kw['post_id']),
+            parent=post_key()
+            )
+        post = db.get(key)
+        if post:
+            return f(self, **kw)
+        else:
+            self.error(404)
+            return
+    return wrapper
+
+
+def owns_post(f):
+    """Wrap functions on posts intended to be used by owners."""
+    @wraps(f)
+    def wrapper(self, **kw):
+        key = db.Key.from_path(
+            'Post',
+            int(kw["post_id"]),
+            parent=post_key()
+            )
+        post = db.get(key)
+
+        username = self.get_cookie("username")
+        password = self.get_cookie("password")
+        user = find_by_name(username)
+
+        if not post:
+            self.error(404)
+            return
+        elif not (user and password == user.password):
+            error = "You must be logged in to perform this action."
+            self.redirect_to('SignIn', error=error)
+        elif not user.username == post.author.username:
+            self.redirect('/blog/%s' % str(post.key().id()))
+        else:
+            return f(self, **kw)
+    return wrapper
+
+
+def owns_comment(f):
+    """Wrap functions on comment actions intended to be used by owners."""
+    @wraps(f)
+    def wrapper(self, **kw):
+        p_key = db.Key.from_path(
+            'Post',
+            int(kw["post_id"]),
+            parent=post_key()
+            )
+        post = db.get(p_key)
+        if not post:
+            self.error(404)
+            return
+
+        c_key = db.Key.from_path(
+            'Comment',
+            int(kw["comment_id"]),
+            parent=p_key
+        )
+        comment = db.get(c_key)
+        if not comment:
+            self.error(404)
+            return
+
+        username = self.get_cookie("username")
+        password = self.get_cookie("password")
+        user = find_by_name(username)
+
+        if not (user and password == user.password):
+            error = "You must be logged in to perform this action."
+            self.redirect_to('SignIn', error=error)
+        elif not user.username == comment.author.username:
+            self.redirect('/blog/%s' % str(post.key().id()))
+        else:
+            return f(self, **kw)
+    return wrapper
 
 
 # Base Handler ################################################################
@@ -185,6 +288,7 @@ class Blog(Handler):
             username=self.get_cookie("username")
             )
 
+    @login_required
     def post(self):
         """Handle the POST action."""
         # Currently, the only post option on the blog post is voting.
@@ -200,26 +304,18 @@ class Blog(Handler):
         vote = self.request.get("vote")
         username = self.get_cookie("username")
 
-        # If the user is signed in, attempt to upvote or downvote
-        if username != "":
-            if vote == "Upvote":
-                vote_item.upvote(username)
-            elif vote == "Downvote":
-                vote_item.downvote(username)
-            vote_item.put()
+        # Attempt to upvote or downvote
+        if vote == "Upvote":
+            vote_item.upvote(username)
+        elif vote == "Downvote":
+            vote_item.downvote(username)
+        vote_item.put()
 
-            # Set vote cache for immediate local update
-            self.set_cookie("cached_type", "VotePost")
-            self.set_cookie("cached_key", str(vote_item.key().id()))
-            self.set_cookie("cached_data", str(vote_item.score))
-            self.redirect_to('Blog')
-
-        # Else, redirect to the sign-in page-title
-        else:
-            self.redirect_to(
-                'SignIn',
-                error="You must be signed in to vote on blog posts."
-                )
+        # Set vote cache for immediate local update
+        self.set_cookie("cached_type", "VotePost")
+        self.set_cookie("cached_key", str(vote_item.key().id()))
+        self.set_cookie("cached_data", str(vote_item.score))
+        self.redirect_to('Blog')
 
 
 class Permalink(Handler):
@@ -229,16 +325,12 @@ class Permalink(Handler):
     as well as a comment entry box.
     """
 
+    @post_exists
     def get(self, **kw):
         """Get the post entry page from the url."""
         # Get the post from the URL
         key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
         post = db.get(key)
-
-        # If the post does not exist, 404
-        if not post:
-            logging.debug("\n404 Page Not Found\n")
-            self.error(404)
 
         # Get cached data
         cached_key = self.get_cookie("cached_key")
@@ -277,10 +369,7 @@ class Permalink(Handler):
 
         # Get post's comments by highest score, then date
         comments = db.Query(Comment).ancestor(key)
-        if comments:
-            comments = comments.order('-score').order('-created')
-        else:
-            comments = []
+        comments = comments.order('-score').order('-created')
 
         return self.render(
             "permalink.html",
@@ -289,6 +378,7 @@ class Permalink(Handler):
             username=self.get_cookie("username")
             )
 
+    @owns_post
     def post(self, **kw):
         """Save comment in the database."""
         # Get post from URL
@@ -313,42 +403,26 @@ class Permalink(Handler):
 
     def vote_post(self, user, post):
         """Vote on post if logged in and not author."""
-
         # Get vote value (Upvote/Downvote)
         vote = self.request.get("vote")
 
-        # If user is logged in, attempt to handle vote and redirect here
-        if user:
-            # If user is not the post's author, handle vote
-            if user.username != post.author.username:
-                if vote == "Upvote":
-                    post.upvote(user.username)
-                elif vote == "Downvote":
-                    post.downvote(user.username)
-                post.put()
-                # Store vote score for quick local updating
-                self.set_cookie("cached_type", "VotePost")
-                self.set_cookie("cached_key", str(post.key().id()))
-                self.set_cookie("cached_data", str(post.score))
+        # If user is not the post's author, handle vote
+        if user.username != post.author.username:
+            if vote == "Upvote":
+                post.upvote(user.username)
+            elif vote == "Downvote":
+                post.downvote(user.username)
+            post.put()
+            # Store vote score for quick local updating
+            self.set_cookie("cached_type", "VotePost")
+            self.set_cookie("cached_key", str(post.key().id()))
+            self.set_cookie("cached_data", str(post.score))
 
             self.redirect('/blog/%s' % str(post.key().id()))
-
-        # Else, redirect to the sign in page
-        else:
-            self.redirect_to(
-                'SignIn',
-                error="You must be signed in to vote on blog posts."
-                )
 
     def add_comment(self, user, post):
         """Add comment if logged in."""
         comment = self.request.get('comment')
-        if not user:
-            error = "You must be logged in to comment."
-            return self.redirect_to(
-                'SignIn',
-                error=error
-                )
 
         if not comment:
             return self.redirect('/blog/%s' % str(post.key().id()))
@@ -380,27 +454,19 @@ class Permalink(Handler):
         # Get vote value (Upvote/Downvote)
         vote = self.request.get("vote")
 
-        # If user is logged in, attempt to handle vote and redirect here
-        if user:
-            if user.username != vote_item.author.username:
-                if vote == "Upvote":
-                    vote_item.upvote(user.username)
-                elif vote == "Downvote":
-                    vote_item.downvote(user.username)
-                vote_item.put()
-                # Store vote score for quick local updating
-                self.set_cookie("cached_type", "VoteComment")
-                self.set_cookie("cached_key", str(vote_item.key().id()))
-                self.set_cookie("cached_data", str(vote_item.score))
+        # If the user is not the author of the comment, attempt to vote
+        if user.username != vote_item.author.username:
+            if vote == "Upvote":
+                vote_item.upvote(user.username)
+            elif vote == "Downvote":
+                vote_item.downvote(user.username)
+            vote_item.put()
+            # Store vote score for quick local updating
+            self.set_cookie("cached_type", "VoteComment")
+            self.set_cookie("cached_key", str(vote_item.key().id()))
+            self.set_cookie("cached_data", str(vote_item.score))
 
-            self.redirect('/blog/%s' % str(post.key().id()))
-
-        # Else, redirect to the sign in page
-        else:
-            self.redirect_to(
-                'SignIn',
-                error="You must be signed in to vote on comments."
-                )
+        self.redirect('/blog/%s' % str(post.key().id()))
 
     def delete_comment(self, user, post):
         """Delete comment if author."""
@@ -412,8 +478,8 @@ class Permalink(Handler):
             )
         comment = db.get(key)
 
-        # If logged in and user is the comment's author, allow deletion
-        if user and str(user.username) == str(comment.author.username):
+        # If user is the comment's author, allow deletion
+        if str(user.username) == str(comment.author.username):
             # Set deleted comment info to local cache
             self.set_cookie("cached_type", "DeleteComment")
             self.set_cookie("cached_key", str(key.id()))
@@ -426,18 +492,12 @@ class Permalink(Handler):
 class NewPost(Handler):
     """Handle the new post entry page."""
 
+    @login_required
     def get(self):
         """Get the new post page."""
-        self.username = self.get_cookie('username')
+        self.render('newpost.html')
 
-        # Only allow logged in users to create posts
-        if self.username:
-            self.render('newpost.html')
-        else:
-            # Redirect to Sign In page
-            error = "You must be signed in to create posts."
-            return self.redirect_to('SignIn', error=error)
-
+    @login_required
     def post(self):
         """Save post in the database if valid, or prompt for valid entry."""
         title = self.request.get('title')
@@ -469,25 +529,21 @@ class NewPost(Handler):
 class EditPost(Handler):
     """Handle the edit blog pages."""
 
+    @owns_post
     def get(self, **kw):
         """Get the blog edit page from the url."""
         # Get post from URL
         key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
         post = db.get(key)
 
-        # Allow editing if user is the post's author
-        username = self.get_cookie('username')
-        if username == post.author.username:
-            self.render(
-                'editpost.html',
-                title=post.title,
-                blogpost=post.blogpost,
-                post_id=kw['post_id']
-                )
-        # Otherwise redirect to the blog post's page
-        else:
-            return self.redirect('/blog/%s' % kw['post_id'])
+        self.render(
+            'editpost.html',
+            title=post.title,
+            blogpost=post.blogpost,
+            post_id=kw['post_id']
+            )
 
+    @owns_post
     def post(self, **kw):
         """Update the blog post."""
         # Get the post from the URL
@@ -499,35 +555,27 @@ class EditPost(Handler):
         title = self.request.get('title')
         blogpost = self.request.get('blogpost')
 
-        # Ensure that the post and user exist
-        if post and username:
-            # Ensure that the user is the post's author
-            if username == post.author.username:
-                # Ensure that the fields are filled out
-                if title and blogpost:
-                    # Edit the post
-                    post.title = title
-                    post.blogpost = blogpost
-                    post.last_modified = datetime.now()
-                    post.put()
-                    return self.redirect('/blog/%s' % kw['post_id'])
-                else:
-                    error = "Please enter a title and post content."
-            else:
-                error = "You are not authorized to edit this post."
+        # Ensure that the fields are filled out
+        if title and blogpost:
+            # Edit the post
+            post.title = title
+            post.blogpost = blogpost
+            post.last_modified = datetime.now()
+            post.put()
+            return self.redirect('/blog/%s' % kw['post_id'])
         else:
-            error = "Cannot access post."
-
-        self.render(
-            'editpost.html',
-            post=post,
-            error=error
-            )
+            error = "Please enter a title and post content."
+            return self.render(
+                'editpost.html',
+                post=post,
+                error=error
+                )
 
 
 class EditComment(Handler):
     """Handle the edit comment pages."""
 
+    @owns_comment
     def get(self, **kw):
         """Get the blog edit page from the url."""
         # Get the post and comment from the URL
@@ -540,20 +588,14 @@ class EditComment(Handler):
             )
         comment = db.get(c_key)
 
-        # Allow edit if user is comment's author
-        username = self.get_cookie('username')
-        if username == comment.author.username:
-            self.render(
-                'editcomment.html',
-                post=post,
-                comment=comment.comment,
-                comment_id=kw['comment_id']
-                )
+        self.render(
+            'editcomment.html',
+            post=post,
+            comment=comment.comment,
+            comment_id=kw['comment_id']
+            )
 
-        # Else, redirect to this post
-        else:
-            return self.redirect('/blog/%s' % kw['post_id'])
-
+    @owns_comment
     def post(self, **kw):
         """Update the comment."""
         # Get post and comment from the URL
@@ -574,52 +616,38 @@ class EditComment(Handler):
         username = self.get_cookie('username')
         comment = self.request.get('comment')
 
-        # Ensure the post, comment to edit, and user exist
-        if post and comm and username:
-            # Ensure that the user is the comment's author
-            if username == comm.author.username:
-                # Ensure that the new comment exists
-                if comment:
-                    comm.comment = comment
-                    comm.last_modified = datetime.now()
-                    comm.put()
-                    return self.redirect('/blog/%s' % kw['post_id'])
-                else:
-                    error = "Please enter a comment."
-            else:
-                error = "You are not authorized to edit this comment."
+        # Ensure that the new comment exists
+        if comment:
+            comm.comment = comment
+            comm.last_modified = datetime.now()
+            comm.put()
+            return self.redirect('/blog/%s' % kw['post_id'])
         else:
-            error = "Cannot access comment."
-
-        self.render(
-            'editpost.html',
-            post=post,
-            error=error
-            )
+            error = "Please enter a comment."
+            return self.render(
+                'editpost.html',
+                post=post,
+                error=error
+                )
 
 
 class DeletePost(Handler):
     """Handle the delete blog post page."""
 
+    @owns_post
     def get(self, **kw):
         """Get the delete post confirmation page."""
         # Get the post from the URL
         key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
         post = db.get(key)
 
-        # If the post exists and the user is the author, display the
-        # confirmation page
-        username = self.get_cookie('username')
-        if post and username == post.author.username:
-            self.render(
-                'deletepost.html',
-                post=post
-                )
+        # Display the confirmation page
+        self.render(
+            'deletepost.html',
+            post=post
+            )
 
-        # Otherwise, redirect to the home page.
-        else:
-            return self.redirect_to('Blog')
-
+    @owns_post
     def post(self, **kw):
         """Delete the post."""
         # Get the post from the URL
@@ -694,6 +722,7 @@ class SignUp(Handler):
                 )
             user.put()
             self.set_cookie("username", username)
+            self.set_cookie("password", password)
             return self.redirect_to('Blog')
 
 
@@ -735,6 +764,7 @@ class SignIn(Handler):
         # Otherwise, log the user in.
         else:
             self.set_cookie("username", username)
+            self.set_cookie("password", password)
             return self.redirect_to('Blog')
 
 
@@ -744,6 +774,7 @@ class LogOut(Handler):
     def get(self):
         """Clear cookies and redirect to sign in."""
         self.set_cookie("username", "")
+        self.set_cookie("password", "")
         return self.redirect_to('SignIn', error="Successfully logged out.")
 
 

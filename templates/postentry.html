@@ -24,7 +24,16 @@
 
     <div class="error">{{error}}</div>
 
-    <input type="submit">
+    <input class="action-link" type="submit">
   </form>
+  {% if post_id %}
+  <br />
+  <form class="inline" action="/blog/{{post_id}}">
+    <button class="action-link" type=submit>
+      Cancel Edit
+    </button>
+  </form>
+  {% endif %}
+
 </div>
 {% endblock %}

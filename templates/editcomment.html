@@ -35,8 +35,14 @@
         </label>
       </div>
       <div>
-        <input type=submit name="edit_comment" value="Submit Changes">
+        <input class="action-link" type=submit name="edit_comment" value="Submit Changes">
       </div>
+    </form>
+    <br />
+    <form class="inline" action="/blog/{{post.key().id()}}">
+      <button class="action-link" type=submit>
+        Cancel Edit
+      </button>
     </form>
 
     <br />

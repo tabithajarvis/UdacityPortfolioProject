@@ -10,10 +10,15 @@
     Are you sure you want to delete this post?
   </p>
 
-  <form class="row" method=post>
+  <form method=post>
     <input type=submit class="action-link" name="delete" value="Delete Post" />
   </form>
-
+  <br />
+  <form action="/blog/{{post.key().id()}}">
+    <button class="action-link" type=submit>
+      Cancel
+    </button>
+  </form>
 </div>
 
 {{post.render() | safe}}
