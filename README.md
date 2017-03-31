@@ -17,12 +17,12 @@ Or go to the deployed app at:
 
 ### Multi-User Blog
 
-####About
+#### About
 This is a multi-user blog application that allows the creation of new users, and allows them to create, comment on, edit, and delete blog posts.  It also allows for voting on blog posts and comments.
 
 The front page displays the ten newest blog posts along with author/date/voting score information on the blogs.  Clicking on the title of any blog post will take you to that blog post's page, where the user can view and create comments about that post.
 
-####Known Issues/Fixes to Come
+#### Known Issues/Fixes to Come
 * There is currently no way to query all past blog posts.  If you do not know the link for a particular post and it is not among the 10 newest posts, there is no way to find it from the website.
 
 * Deleting posts does not delete the comments associated with that post.  If the ability to look at your own past comments is added in the future, these comments should still exist with no post parent, but for now they become inaccessible without a post page to view them on.
