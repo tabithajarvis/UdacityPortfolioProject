@@ -427,7 +427,7 @@ class Permalink(Handler):
             self.set_cookie("cached_key", str(post.key().id()))
             self.set_cookie("cached_data", str(post.score))
 
-            self.redirect('/blog/%s' % str(post.key().id()))
+        self.redirect('/blog/%s' % str(post.key().id()))
 
     def add_comment(self, user, post):
         """Add comment if logged in."""
