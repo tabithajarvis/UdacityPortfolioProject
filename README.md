@@ -36,5 +36,3 @@ The front page displays the ten newest blog posts along with author/date/voting 
     - When creating a new comment, it seems to take a longer time to add that comment to the User's comment collection, and so upon refreshing the page, the Author of the comment does not appear.
 
     This is fixed with cookies being used for caching.  The user will see the results immediately, although other users will still get the slight delay if they attempted to refresh at that moment.
-
-* If the username cookie is set before the password cookie in the SignIn handler, the username cookie is not stored.  Also, in the LogOut handler, if the clear_cookie call for username is before the clear_cookie call for password, username does not get cleared.  This requires further investigation, but for now, switching the order fixes the problem.

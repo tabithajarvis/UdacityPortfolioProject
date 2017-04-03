@@ -83,6 +83,7 @@ def find_by_name(username):
         "select * from User where username = :username",
         username=username
         )
+    logging.debug("\nFound user: %s" % user.get().username)
     return user.get()
 
 
@@ -104,10 +105,10 @@ def login_required(f):
     """Wrap functions that require login with login check."""
     @wraps(f)
     def wrapper(self):
-        username = self.get_cookie("username")
-        password = self.get_cookie("password")
+        username = str(self.get_cookie("username"))
+        password = str(self.get_cookie("password"))
         user = find_by_name(username)
-        if user and password == user.password:
+        if user and user.password == password:
             return f(self)
         else:
             logging.debug("\nUser: %s\nPassword: %s\n" % (username, password))
@@ -227,14 +228,12 @@ class Handler(webapp2.RequestHandler):
         """Set a cookie."""
         logging.debug("\nSetting cookie: %s to %s" % (name, value))
         secure_val = make_secure_val(value)
-        self.response.headers['Set-Cookie'] = \
-            str("%s=%s; Path=/;" % (name, secure_val))
+        self.response.set_cookie(name, secure_val, path="/", overwrite=True)
 
     def clear_cookie(self, name):
         """Clear a cookie."""
         logging.debug("\nCookie cleared: %s" % name)
-        self.response.headers['Set-Cookie'] = \
-            str("%s=; Path=/;" % name)
+        self.response.delete_cookie(name)
 
     def get_cookie(self, name):
         """Get a cookie."""
@@ -265,8 +264,6 @@ class Blog(Handler):
 
     def get(self):
         """Get the front page with the 10 newest blog posts."""
-        username = self.get_cookie("username")
-        password = self.get_cookie("password")
         # Retrieve the 10 most recent posts
         posts = db.GqlQuery(
             "select * from Post order by created desc limit 10"
@@ -297,7 +294,7 @@ class Blog(Handler):
         self.render(
             'blog.html',
             posts=posts,
-            username=username
+            username=str(self.get_cookie("username"))
             )
 
     @login_required
@@ -773,8 +770,8 @@ class SignIn(Handler):
 
         # Otherwise, log the user in.
         else:
-            self.set_cookie("password", password)
             self.set_cookie("username", username)
+            self.set_cookie("password", password)
             return self.redirect_to('Blog')
 
 
@@ -783,8 +780,8 @@ class LogOut(Handler):
 
     def get(self):
         """Clear cookies and redirect to sign in."""
-        self.clear_cookie("password")
         self.clear_cookie("username")
+        self.clear_cookie("password")
         return self.redirect_to('SignIn', error="Successfully logged out.")
 
 
