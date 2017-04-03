@@ -225,15 +225,25 @@ class Handler(webapp2.RequestHandler):
 
     def set_cookie(self, name, value):
         """Set a cookie."""
+        logging.debug("\nSetting cookie: %s to %s" % (name, value))
         secure_val = make_secure_val(value)
         self.response.headers['Set-Cookie'] = \
             str("%s=%s; Path=/;" % (name, secure_val))
 
+    def clear_cookie(self, name):
+        """Clear a cookie."""
+        logging.debug("\nCookie cleared: %s" % name)
+        self.response.headers['Set-Cookie'] = \
+            str("%s=; Path=/;" % name)
+
     def get_cookie(self, name):
         """Get a cookie."""
+        logging.debug("\nRequesting cookie: %s" % name)
         value = self.request.cookies.get(name)
         if value:
-            return check_secure_val(value)
+            val = check_secure_val(value)
+            logging.debug("\nCookie retrieved: %s" % val)
+            return val
 
 
 # Page Handlers ###############################################################
@@ -255,6 +265,8 @@ class Blog(Handler):
 
     def get(self):
         """Get the front page with the 10 newest blog posts."""
+        username = self.get_cookie("username")
+        password = self.get_cookie("password")
         # Retrieve the 10 most recent posts
         posts = db.GqlQuery(
             "select * from Post order by created desc limit 10"
@@ -266,7 +278,7 @@ class Blog(Handler):
         cached_key = self.get_cookie("cached_key")
         cached_data = self.get_cookie("cached_data")
 
-        logging.debug("\nCached Type is: %s\n" % cached_type)
+        logging.debug("\nCached Type is: %s" % cached_type)
 
         # If "Vote Post" is cached, locally set the score of that post.
         if cached_type == "VotePost" and int(cached_key) in posts:
@@ -278,14 +290,14 @@ class Blog(Handler):
         # If "Delete Post" is cached, remove post locally.
         elif cached_type == "DeletePost" and int(cached_key) in posts:
             del posts[int(cached_key)]
-            self.set_cookie("cached_type", "")
-            self.set_cookie("cached_key", "")
-            self.set_cookie("cached_data", "")
+            self.clear_cookie("cached_type")
+            self.clear_cookie("cached_key")
+            self.clear_cookie("cached_data")
 
         self.render(
             'blog.html',
             posts=posts,
-            username=self.get_cookie("username")
+            username=username
             )
 
     @login_required
@@ -550,8 +562,7 @@ class EditPost(Handler):
         key = db.Key.from_path('Post', int(kw['post_id']), parent=post_key())
         post = db.get(key)
 
-        # Get the username and fields
-        username = self.get_cookie('username')
+        # Get the fields
         title = self.request.get('title')
         blogpost = self.request.get('blogpost')
 
@@ -612,8 +623,7 @@ class EditComment(Handler):
             )
         comm = db.get(c_key)
 
-        # Get username and edited comment.
-        username = self.get_cookie('username')
+        # Get the edited comment.
         comment = self.request.get('comment')
 
         # Ensure that the new comment exists
@@ -740,8 +750,8 @@ class SignIn(Handler):
     def post(self, **kw):
         """Store username cookie if userame and password are correct."""
         # Get the form info
-        username = self.request.get('username')
-        password = self.request.get('password')
+        username = str(self.request.get('username'))
+        password = str(self.request.get('password'))
         error_flag = False
 
         # Initialize params
@@ -759,12 +769,12 @@ class SignIn(Handler):
 
         # If there were errors, return this page with the errors
         if error_flag:
-            self.render('signin-form.html', **params)
+            return self.render('signin-form.html', **params)
 
         # Otherwise, log the user in.
         else:
-            self.set_cookie("username", username)
             self.set_cookie("password", password)
+            self.set_cookie("username", username)
             return self.redirect_to('Blog')
 
 
@@ -773,8 +783,8 @@ class LogOut(Handler):
 
     def get(self):
         """Clear cookies and redirect to sign in."""
-        self.set_cookie("username", "")
-        self.set_cookie("password", "")
+        self.clear_cookie("password")
+        self.clear_cookie("username")
         return self.redirect_to('SignIn', error="Successfully logged out.")
 
 
